@@ -1,0 +1,14 @@
+[
+  {
+    "id": "BUS001",
+    "businessName": "Sunrise Bakery",
+    "ownerName": "Jane Smith",
+    "email": "jane@sunrisebakery.co.za",
+    "phone": "+27 82 123 4567",
+    "address": "15 Main Road",
+    "businessType": "Bakery",
+    "currency": "ZAR",
+    "createdAt": "2026-08-05T09:13:44.032Z",
+    "updatedAt": "2026-08-05T09:13:44.035Z"
+  }
+]

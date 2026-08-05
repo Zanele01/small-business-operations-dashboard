@@ -1,21 +1,27 @@
 const Business = require("../models/business");
+const fileStorage = require("../utils/fileStorage");
+
+const FILE_NAME = "businesses.json";
 
 class BusinessService {
-    constructor() {
-        this.businesses = [];
+
+    getAllBusinesses() {
+        return fileStorage.read(FILE_NAME);
     }
 
     createBusiness(businessData) {
+
+        const businesses = fileStorage.read(FILE_NAME);
+
         const business = new Business(businessData);
 
-        this.businesses.push(business);
+        businesses.push(business);
+
+        fileStorage.write(FILE_NAME, businesses);
 
         return business;
     }
 
-    getAllBusinesses() {
-        return this.businesses;
-    }
 }
 
 module.exports = new BusinessService();
