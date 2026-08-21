@@ -1,17 +1,14 @@
 const express = require("express");
 
+const {
+    getAllBusinesses,
+    createBusiness
+} = require("../controllers/businessController");
+
 const router = express.Router();
 
-const businessController = require("../controllers/businessController");
+router.get("/", getAllBusinesses);
 
-router.get(
-    "/",
-    businessController.getAllBusinesses
-);
-
-router.post(
-    "/",
-    businessController.createBusiness
-);
+router.post("/", createBusiness);
 
 module.exports = router;

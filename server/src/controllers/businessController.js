@@ -1,18 +1,26 @@
 const businessService = require("../services/businessService");
 
-class BusinessController {
-
-    getAllBusinesses(req, res) {
+const getAllBusinesses = (req, res, next) => {
+    try {
         const businesses = businessService.getAllBusinesses();
 
         res.status(200).json(businesses);
+    } catch (error) {
+        next(error);
     }
+};
 
-    createBusiness(req, res) {
+const createBusiness = (req, res, next) => {
+    try {
         const business = businessService.createBusiness(req.body);
 
         res.status(201).json(business);
+    } catch (error) {
+        next(error);
     }
-}
+};
 
-module.exports = new BusinessController();
+module.exports = {
+    getAllBusinesses,
+    createBusiness
+};
