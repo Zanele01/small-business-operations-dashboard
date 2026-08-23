@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 
 const businessRoutes = require("./src/routes/businessRoutes");
+const productRoutes = require("./src/routes/productRoutes");
 const errorHandler = require("./src/middleware/errorHandler");
 
 const app = express();
@@ -17,6 +18,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/business", businessRoutes);
+app.use("/api/products", productRoutes);
 
 app.use(errorHandler);
 

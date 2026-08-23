@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "PROD001",
+    "businessId": "BUS001",
+    "name": "Chocolate Cake",
+    "description": "Freshly baked chocolate cake",
+    "price": 120,
+    "stockQuantity": 10,
+    "category": "Cakes",
+    "currency": "ZAR",
+    "createdAt": "2026-08-23T15:39:49.757Z",
+    "updatedAt": "2026-08-23T15:39:49.757Z"
+  }
+]
