@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "SALE001",
+    "businessId": "BUS001",
+    "productId": "PROD001",
+    "quantity": 2,
+    "unitPrice": 120,
+    "totalAmount": 240,
+    "paymentMethod": "Cash",
+    "currency": "ZAR",
+    "createdAt": "2026-09-10T08:33:26.098Z",
+    "updatedAt": "2026-09-10T08:33:26.098Z"
+  }
+]
