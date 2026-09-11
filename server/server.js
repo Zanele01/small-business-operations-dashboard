@@ -5,6 +5,7 @@ const businessRoutes = require("./src/routes/businessRoutes");
 const productRoutes = require("./src/routes/productRoutes");
 const errorHandler = require("./src/middleware/errorHandler");
 const saleRoutes = require("./src/routes/saleRoutes");
+const expenseRoutes = require("./src/routes/expenseRoutes");
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.get("/health", (req, res) => {
 app.use("/api/business", businessRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/sales", saleRoutes);
+app.use("/api/expenses", expenseRoutes);
 
 app.use(errorHandler);
 

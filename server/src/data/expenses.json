@@ -1,1 +1,13 @@
-[]
+[
+  {
+    "id": "EXP001",
+    "businessId": "BUS001",
+    "description": "Electricity bill",
+    "amount": 850,
+    "category": "Utilities",
+    "paymentMethod": "Bank Transfer",
+    "currency": "ZAR",
+    "createdAt": "2026-09-11T09:04:35.573Z",
+    "updatedAt": "2026-09-11T09:04:35.573Z"
+  }
+]
