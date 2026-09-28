@@ -1,0 +1,18 @@
+[
+  {
+    "id": "CUS001",
+    "businessId": "BUS001",
+    "name": "Alice Johnson",
+    "email": "alice.johnson@example.com",
+    "phone": "+27821234567",
+    "createdAt": "2026-09-28T09:31:19.750Z"
+  },
+  {
+    "id": "CUS002",
+    "businessId": "BUS001",
+    "name": "Bob Williams",
+    "email": "bob.williams@example.com",
+    "phone": "+27829876543",
+    "createdAt": "2026-09-28T09:42:09.799Z"
+  }
+]
