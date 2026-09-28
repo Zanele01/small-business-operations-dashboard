@@ -1,1 +1,20 @@
-[]
+[
+  {
+    "id": "NOTIF001",
+    "businessId": "BUS001",
+    "title": "Welcome",
+    "message": "Welcome to your business dashboard.",
+    "type": "info",
+    "isRead": true,
+    "createdAt": "2026-09-21T09:57:57.592Z"
+  },
+  {
+    "id": "NOTIF002",
+    "businessId": "BUS001",
+    "title": "Low Stock Warning",
+    "message": "Chocolate Cake stock is running low.",
+    "type": "warning",
+    "isRead": false,
+    "createdAt": "2026-09-21T10:14:33.727Z"
+  }
+]

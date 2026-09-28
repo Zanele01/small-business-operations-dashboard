@@ -7,6 +7,8 @@ const errorHandler = require("./src/middleware/errorHandler");
 const saleRoutes = require("./src/routes/saleRoutes");
 const expenseRoutes = require("./src/routes/expenseRoutes");
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
+const notificationRoutes = require("./src/routes/notificationRoutes");
+
 
 const app = express();
 
@@ -25,6 +27,8 @@ app.use("/api/products", productRoutes);
 app.use("/api/sales", saleRoutes);
 app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/notifications", notificationRoutes);
+
 
 app.use(errorHandler);
 
