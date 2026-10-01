@@ -1,0 +1,18 @@
+[
+  {
+    "id": "SUP001",
+    "businessId": "BUS001",
+    "name": "ABC Flour Suppliers",
+    "email": "orders@abcflour.example.com",
+    "phone": "+27821112233",
+    "createdAt": "2026-10-01T08:43:50.099Z"
+  },
+  {
+    "id": "SUP002",
+    "businessId": "BUS001",
+    "name": "Cape Packaging Supplies",
+    "email": "sales@capepackaging.example.com",
+    "phone": "+27824445566",
+    "createdAt": "2026-10-01T08:58:58.349Z"
+  }
+]

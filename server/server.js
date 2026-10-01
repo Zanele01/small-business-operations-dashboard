@@ -9,6 +9,7 @@ const expenseRoutes = require("./src/routes/expenseRoutes");
 const dashboardRoutes = require("./src/routes/dashboardRoutes");
 const notificationRoutes = require("./src/routes/notificationRoutes");
 const customerRoutes = require("./src/routes/customerRoutes");
+const supplierRoutes = require("./src/routes/supplierRoutes");
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use("/api/expenses", expenseRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/customers", customerRoutes);
+app.use("/api/suppliers", supplierRoutes);
 
 
 app.use(errorHandler);
