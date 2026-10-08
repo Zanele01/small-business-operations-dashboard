@@ -1,0 +1,20 @@
+[
+  {
+    "id": "EMP001",
+    "businessId": "BUS001",
+    "name": "Sarah Williams",
+    "email": "sarah.williams@example.com",
+    "phone": "+27823334455",
+    "role": "Sales Assistant",
+    "createdAt": "2026-10-08T08:06:21.344Z"
+  },
+  {
+    "id": "EMP002",
+    "businessId": "BUS001",
+    "name": "Michael Dlamini",
+    "email": "michael.dlamini@example.com",
+    "phone": "+27826667788",
+    "role": "Store Manager",
+    "createdAt": "2026-10-08T08:18:49.610Z"
+  }
+]
