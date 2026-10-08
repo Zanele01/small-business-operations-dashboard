@@ -11,6 +11,7 @@ const notificationRoutes = require("./src/routes/notificationRoutes");
 const customerRoutes = require("./src/routes/customerRoutes");
 const supplierRoutes = require("./src/routes/supplierRoutes");
 const employeeRoutes = require("./src/routes/employeeRoutes");
+const taskRoutes = require("./src/routes/taskRoutes");
 
 const app = express();
 
@@ -33,7 +34,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/suppliers", supplierRoutes);
 app.use("/api/employees", employeeRoutes);
-
+app.use("/api/tasks", taskRoutes);
 
 app.use(errorHandler);
 

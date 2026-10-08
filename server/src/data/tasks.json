@@ -1,0 +1,20 @@
+[
+  {
+    "id": "TASK001",
+    "businessId": "BUS001",
+    "title": "Check bakery stock",
+    "description": "Review current stock levels for flour, sugar, and baking ingredients.",
+    "status": "Pending",
+    "priority": "High",
+    "createdAt": "2026-10-08T09:02:25.652Z"
+  },
+  {
+    "id": "TASK002",
+    "businessId": "BUS001",
+    "title": "Clean display area",
+    "description": "Clean and organize the customer display area before opening.",
+    "status": "Pending",
+    "priority": "Medium",
+    "createdAt": "2026-10-08T09:08:44.223Z"
+  }
+]
