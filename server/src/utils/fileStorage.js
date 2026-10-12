@@ -12,7 +12,17 @@ class FileStorage {
 
         const data = fs.readFileSync(filePath, "utf8");
 
-        return data ? JSON.parse(data) : [];
+        if (!data.trim()) {
+            return [];
+        }
+
+        try {
+            return JSON.parse(data);
+        } catch (error) {
+            throw new Error(
+                `Failed to parse JSON file "${fileName}": ${error.message}`
+            );
+        }
     }
 
     write(fileName, data) {
