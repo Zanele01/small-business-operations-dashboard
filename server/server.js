@@ -12,6 +12,7 @@ const customerRoutes = require("./src/routes/customerRoutes");
 const supplierRoutes = require("./src/routes/supplierRoutes");
 const employeeRoutes = require("./src/routes/employeeRoutes");
 const taskRoutes = require("./src/routes/taskRoutes");
+const reportRoutes = require("./src/routes/reportRoutes");
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/suppliers", supplierRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api/reports", reportRoutes);
 
 app.use(errorHandler);
 
