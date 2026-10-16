@@ -20,6 +20,21 @@ class ProductService {
 
     createProduct(productData) {
 
+        // Validate the request body
+        if (
+            !productData ||
+            typeof productData !== "object" ||
+            Array.isArray(productData)
+        ) {
+            const error = new Error(
+                "Product data must be an object."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Validate required fields
         const requiredFields = [
             "id",
             "businessId",
@@ -35,12 +50,94 @@ class ProductService {
                 productData[field] === null ||
                 productData[field] === ""
             ) {
-                const error = new Error(`${field} is required.`);
+                const error = new Error(
+                    `${field} is required.`
+                );
+
                 error.statusCode = 400;
                 throw error;
             }
         }
 
+        // Validate required string fields
+        const stringFields = [
+            "id",
+            "businessId",
+            "name",
+            "category"
+        ];
+
+        for (const field of stringFields) {
+            if (
+                typeof productData[field] !== "string" ||
+                !productData[field].trim()
+            ) {
+                const error = new Error(
+                    `${field} must be a non-empty string.`
+                );
+
+                error.statusCode = 400;
+                throw error;
+            }
+        }
+
+        // Validate optional description
+        if (
+            productData.description !== undefined &&
+            typeof productData.description !== "string"
+        ) {
+            const error = new Error(
+                "Description must be a string."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Validate optional currency
+        if (
+            productData.currency !== undefined &&
+            (
+                typeof productData.currency !== "string" ||
+                !productData.currency.trim()
+            )
+        ) {
+            const error = new Error(
+                "Currency must be a non-empty string."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Validate price
+        if (
+            typeof productData.price !== "number" ||
+            !Number.isFinite(productData.price) ||
+            productData.price < 0
+        ) {
+            const error = new Error(
+                "Price must be a finite number greater than or equal to 0."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Validate stock quantity
+        if (
+            !Number.isInteger(productData.stockQuantity) ||
+            productData.stockQuantity < 0
+        ) {
+            const error = new Error(
+                "Stock quantity must be a whole number greater than or equal to 0."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Verify that the associated business exists
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
@@ -56,6 +153,7 @@ class ProductService {
             throw error;
         }
 
+        // Check for duplicate product IDs
         const products = fileStorage.read(FILE_NAME);
 
         const existingProduct = products.find(
@@ -63,37 +161,18 @@ class ProductService {
         );
 
         if (existingProduct) {
-            const error = new Error("Product ID already exists.");
+            const error = new Error(
+                "Product ID already exists."
+            );
+
             error.statusCode = 409;
             throw error;
         }
 
-        if (
-            typeof productData.price !== "number" ||
-            productData.price < 0
-        ) {
-            const error = new Error(
-                "Price must be a number greater than or equal to 0."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
-        if (
-            !Number.isInteger(productData.stockQuantity) ||
-            productData.stockQuantity < 0
-        ) {
-            const error = new Error(
-                "Stock quantity must be a whole number greater than or equal to 0."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
+        // Create the product
         const product = new Product(productData);
 
+        // Save the product to JSON storage
         products.push(product);
 
         fileStorage.write(FILE_NAME, products);
