@@ -34,6 +34,32 @@ class EmployeeService {
         phone,
         role
     ) {
+
+        // Validate required string fields
+        const requiredFields = {
+            id,
+            businessId,
+            name,
+            email,
+            phone,
+            role
+        };
+
+        for (const [field, value] of Object.entries(requiredFields)) {
+            if (
+                typeof value !== "string" ||
+                !value.trim()
+            ) {
+                const error = new Error(
+                    `${field} must be a non-empty string.`
+                );
+
+                error.statusCode = 400;
+                throw error;
+            }
+        }
+
+        // Verify that the associated business exists
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
@@ -46,22 +72,7 @@ class EmployeeService {
             throw error;
         }
 
-        if (
-            !id ||
-            !businessId ||
-            !name ||
-            !email ||
-            !phone ||
-            !role
-        ) {
-            const error = new Error(
-                "ID, businessId, name, email, phone, and role are required."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
+        // Check for duplicate employee IDs
         const employees = this.getAllEmployees();
 
         const duplicate = employees.find(
@@ -77,6 +88,7 @@ class EmployeeService {
             throw error;
         }
 
+        // Create the employee
         const employee = new Employee(
             id,
             businessId,
@@ -86,6 +98,7 @@ class EmployeeService {
             role
         );
 
+        // Persist the validated employee
         employees.push(employee);
 
         fileStorage.write(FILE_NAME, employees);
