@@ -33,6 +33,31 @@ class SupplierService {
         email,
         phone
     ) {
+
+        // Validate required string fields
+        const requiredFields = {
+            id,
+            businessId,
+            name,
+            email,
+            phone
+        };
+
+        for (const [field, value] of Object.entries(requiredFields)) {
+            if (
+                typeof value !== "string" ||
+                !value.trim()
+            ) {
+                const error = new Error(
+                    `${field} must be a non-empty string.`
+                );
+
+                error.statusCode = 400;
+                throw error;
+            }
+        }
+
+        // Verify that the associated business exists
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
@@ -45,15 +70,7 @@ class SupplierService {
             throw error;
         }
 
-        if (!id || !businessId || !name || !email || !phone) {
-            const error = new Error(
-                "ID, businessId, name, email, and phone are required."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
+        // Check for duplicate supplier IDs
         const suppliers = this.getAllSuppliers();
 
         const duplicate = suppliers.find(
@@ -69,6 +86,7 @@ class SupplierService {
             throw error;
         }
 
+        // Create the supplier
         const supplier = new Supplier(
             id,
             businessId,
@@ -77,6 +95,7 @@ class SupplierService {
             phone
         );
 
+        // Persist the validated supplier
         suppliers.push(supplier);
 
         fileStorage.write(FILE_NAME, suppliers);
