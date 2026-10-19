@@ -1,10 +1,15 @@
 function errorHandler(err, req, res, next) {
     const statusCode = err.statusCode || 500;
 
-    const message =
-        statusCode >= 500
-            ? "An unexpected server error occurred."
-            : err.message || "An unexpected error occurred.";
+    let message;
+
+    if (err.type === "entity.parse.failed") {
+        message = "Invalid JSON request body.";
+    } else if (statusCode >= 500) {
+        message = "An unexpected server error occurred.";
+    } else {
+        message = err.message || "An unexpected error occurred.";
+    }
 
     if (statusCode >= 500) {
         console.error(err);
