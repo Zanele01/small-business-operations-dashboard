@@ -33,10 +33,37 @@ class CustomerService {
         email,
         phone
     ) {
+        // Validate required fields.
+        const requiredFields = {
+            id,
+            businessId,
+            name,
+            email,
+            phone
+        };
+
+        const invalidField = Object.entries(
+            requiredFields
+        ).find(
+            ([, value]) =>
+                typeof value !== "string" ||
+                value.trim().length === 0
+        );
+
+        if (invalidField) {
+            const error = new Error(
+                "ID, businessId, name, email, and phone must be non-empty strings."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Confirm that the business exists.
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
-            (business) => business.id === businessId
+            (business) => business.id === businessId.trim()
         );
 
         if (!businessExists) {
@@ -45,19 +72,11 @@ class CustomerService {
             throw error;
         }
 
-        if (!id || !businessId || !name || !email || !phone) {
-            const error = new Error(
-                "ID, businessId, name, email, and phone are required."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
+        // Check for duplicate customer IDs.
         const customers = this.getAllCustomers();
 
         const duplicate = customers.find(
-            (customer) => customer.id === id
+            (customer) => customer.id === id.trim()
         );
 
         if (duplicate) {
@@ -69,12 +88,13 @@ class CustomerService {
             throw error;
         }
 
+        // Create and save the customer after validation.
         const customer = new Customer(
-            id,
-            businessId,
-            name,
-            email,
-            phone
+            id.trim(),
+            businessId.trim(),
+            name.trim(),
+            email.trim(),
+            phone.trim()
         );
 
         customers.push(customer);
