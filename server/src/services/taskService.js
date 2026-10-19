@@ -34,6 +34,34 @@ class TaskService {
         status,
         priority
     ) {
+        // Validate required fields.
+        const requiredFields = {
+            id,
+            businessId,
+            title,
+            description,
+            status,
+            priority
+        };
+
+        const invalidField = Object.entries(
+            requiredFields
+        ).find(
+            ([, value]) =>
+                typeof value !== "string" ||
+                value.trim().length === 0
+        );
+
+        if (invalidField) {
+            const error = new Error(
+                "ID, businessId, title, description, status, and priority must be non-empty strings."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Confirm that the business exists.
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
@@ -46,22 +74,7 @@ class TaskService {
             throw error;
         }
 
-        if (
-            !id ||
-            !businessId ||
-            !title ||
-            !description ||
-            !status ||
-            !priority
-        ) {
-            const error = new Error(
-                "ID, businessId, title, description, status, and priority are required."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
+        // Check for duplicate task IDs.
         const tasks = this.getAllTasks();
 
         const duplicate = tasks.find(
@@ -77,13 +90,14 @@ class TaskService {
             throw error;
         }
 
+        // Create and save the task only after validation.
         const task = new Task(
-            id,
-            businessId,
-            title,
-            description,
-            status,
-            priority
+            id.trim(),
+            businessId.trim(),
+            title.trim(),
+            description.trim(),
+            status.trim(),
+            priority.trim()
         );
 
         tasks.push(task);
