@@ -33,28 +33,32 @@ class NotificationService {
         message,
         type
     ) {
-        // Check that the business exists
-        const businesses = businessService.getAllBusinesses();
+        // Validate required fields
+        const fields = {
+            id,
+            businessId,
+            title,
+            message,
+            type
+        };
 
-        const businessExists = businesses.some(
-            (business) => business.id === businessId
-        );
+        for (const [fieldName, value] of Object.entries(fields)) {
+            if (typeof value !== "string" || !value.trim()) {
+                const error = new Error(
+                    `${fieldName} must be a non-empty string.`
+                );
 
-        if (!businessExists) {
-            const error = new Error("Business not found.");
-            error.statusCode = 404;
-            throw error;
+                error.statusCode = 400;
+                throw error;
+            }
         }
 
-        // Check required fields
-        if (!id || !businessId || !title || !message || !type) {
-            const error = new Error(
-                "ID, businessId, title, message, and type are required."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
+        // Trim whitespace from validated fields
+        id = id.trim();
+        businessId = businessId.trim();
+        title = title.trim();
+        message = message.trim();
+        type = type.trim();
 
         // Check notification type
         const validTypes = ["info", "warning", "success"];
@@ -65,6 +69,19 @@ class NotificationService {
             );
 
             error.statusCode = 400;
+            throw error;
+        }
+
+        // Check that the business exists
+        const businesses = businessService.getAllBusinesses();
+
+        const businessExists = businesses.some(
+            (business) => business.id === businessId
+        );
+
+        if (!businessExists) {
+            const error = new Error("Business not found.");
+            error.statusCode = 404;
             throw error;
         }
 
@@ -84,7 +101,7 @@ class NotificationService {
             throw error;
         }
 
-        // Create notification
+        // Create and save notification
         const notification = new Notification(
             id,
             businessId,
@@ -99,25 +116,26 @@ class NotificationService {
 
         return notification;
     }
-	markNotificationAsRead(notificationId) {
-    const notifications = this.getAllNotifications();
 
-    const notification = notifications.find(
-        (notification) => notification.id === notificationId
-    );
+    markNotificationAsRead(notificationId) {
+        const notifications = this.getAllNotifications();
 
-    if (!notification) {
-        const error = new Error("Notification not found.");
-        error.statusCode = 404;
-        throw error;
+        const notification = notifications.find(
+            (notification) => notification.id === notificationId
+        );
+
+        if (!notification) {
+            const error = new Error("Notification not found.");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        notification.isRead = true;
+
+        fileStorage.write(FILE_NAME, notifications);
+
+        return notification;
     }
-
-    notification.isRead = true;
-
-    fileStorage.write(FILE_NAME, notifications);
-
-    return notification;
-}
 }
 
 module.exports = new NotificationService();
