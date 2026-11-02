@@ -18,11 +18,13 @@ class SupplierService {
         );
     }
 
-    getSupplierById(supplierId) {
+    getSupplierById(businessId, supplierId) {
         const suppliers = this.getAllSuppliers();
 
         return suppliers.find(
-            (supplier) => supplier.id === supplierId
+            (supplier) =>
+                supplier.businessId === businessId &&
+                supplier.id === supplierId
         );
     }
 
@@ -33,8 +35,7 @@ class SupplierService {
         email,
         phone
     ) {
-
-        // Validate required string fields
+        // Validate required string fields.
         const requiredFields = {
             id,
             businessId,
@@ -57,7 +58,7 @@ class SupplierService {
             }
         }
 
-        // Verify that the associated business exists
+        // Verify that the associated business exists.
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
@@ -70,7 +71,7 @@ class SupplierService {
             throw error;
         }
 
-        // Check for duplicate supplier IDs
+        // Check for duplicate supplier IDs.
         const suppliers = this.getAllSuppliers();
 
         const duplicate = suppliers.find(
@@ -86,7 +87,7 @@ class SupplierService {
             throw error;
         }
 
-        // Create the supplier
+        // Create the supplier.
         const supplier = new Supplier(
             id,
             businessId,
@@ -95,7 +96,7 @@ class SupplierService {
             phone
         );
 
-        // Persist the validated supplier
+        // Persist the validated supplier.
         suppliers.push(supplier);
 
         fileStorage.write(FILE_NAME, suppliers);

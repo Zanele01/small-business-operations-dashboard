@@ -17,6 +17,7 @@ const getSupplierById = (req, res, next) => {
     try {
         const supplier =
             supplierService.getSupplierById(
+                req.params.businessId,
                 req.params.supplierId
             );
 
