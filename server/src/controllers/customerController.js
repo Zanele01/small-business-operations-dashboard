@@ -2,10 +2,9 @@ const customerService = require("../services/customerService");
 
 const getCustomersByBusiness = (req, res, next) => {
     try {
-        const customers =
-            customerService.getCustomersByBusiness(
-                req.params.businessId
-            );
+        const customers = customerService.getCustomersByBusiness(
+            req.params.businessId
+        );
 
         res.status(200).json(customers);
     } catch (error) {
@@ -15,10 +14,10 @@ const getCustomersByBusiness = (req, res, next) => {
 
 const getCustomerById = (req, res, next) => {
     try {
-        const customer =
-            customerService.getCustomerById(
-                req.params.customerId
-            );
+        const customer = customerService.getCustomerById(
+            req.params.businessId,
+            req.params.customerId
+        );
 
         if (!customer) {
             const error = new Error("Customer not found.");
@@ -42,14 +41,13 @@ const createCustomer = (req, res, next) => {
             phone
         } = req.body;
 
-        const customer =
-            customerService.createCustomer(
-                id,
-                businessId,
-                name,
-                email,
-                phone
-            );
+        const customer = customerService.createCustomer(
+            id,
+            businessId,
+            name,
+            email,
+            phone
+        );
 
         res.status(201).json(customer);
     } catch (error) {

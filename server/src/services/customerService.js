@@ -18,11 +18,13 @@ class CustomerService {
         );
     }
 
-    getCustomerById(customerId) {
+    getCustomerById(businessId, customerId) {
         const customers = this.getAllCustomers();
 
         return customers.find(
-            (customer) => customer.id === customerId
+            (customer) =>
+                customer.businessId === businessId &&
+                customer.id === customerId
         );
     }
 
