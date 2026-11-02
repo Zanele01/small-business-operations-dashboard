@@ -18,11 +18,13 @@ class EmployeeService {
         );
     }
 
-    getEmployeeById(employeeId) {
+    getEmployeeById(businessId, employeeId) {
         const employees = this.getAllEmployees();
 
         return employees.find(
-            (employee) => employee.id === employeeId
+            (employee) =>
+                employee.businessId === businessId &&
+                employee.id === employeeId
         );
     }
 
@@ -34,8 +36,7 @@ class EmployeeService {
         phone,
         role
     ) {
-
-        // Validate required string fields
+        // Validate required string fields.
         const requiredFields = {
             id,
             businessId,
@@ -59,7 +60,7 @@ class EmployeeService {
             }
         }
 
-        // Verify that the associated business exists
+        // Verify that the associated business exists.
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
@@ -72,7 +73,7 @@ class EmployeeService {
             throw error;
         }
 
-        // Check for duplicate employee IDs
+        // Check for duplicate employee IDs.
         const employees = this.getAllEmployees();
 
         const duplicate = employees.find(
@@ -88,7 +89,7 @@ class EmployeeService {
             throw error;
         }
 
-        // Create the employee
+        // Create the employee.
         const employee = new Employee(
             id,
             businessId,
@@ -98,7 +99,7 @@ class EmployeeService {
             role
         );
 
-        // Persist the validated employee
+        // Persist the validated employee.
         employees.push(employee);
 
         fileStorage.write(FILE_NAME, employees);

@@ -2,10 +2,9 @@ const employeeService = require("../services/employeeService");
 
 const getEmployeesByBusiness = (req, res, next) => {
     try {
-        const employees =
-            employeeService.getEmployeesByBusiness(
-                req.params.businessId
-            );
+        const employees = employeeService.getEmployeesByBusiness(
+            req.params.businessId
+        );
 
         res.status(200).json(employees);
     } catch (error) {
@@ -15,10 +14,10 @@ const getEmployeesByBusiness = (req, res, next) => {
 
 const getEmployeeById = (req, res, next) => {
     try {
-        const employee =
-            employeeService.getEmployeeById(
-                req.params.employeeId
-            );
+        const employee = employeeService.getEmployeeById(
+            req.params.businessId,
+            req.params.employeeId
+        );
 
         if (!employee) {
             const error = new Error("Employee not found.");
@@ -43,15 +42,14 @@ const createEmployee = (req, res, next) => {
             role
         } = req.body;
 
-        const employee =
-            employeeService.createEmployee(
-                id,
-                businessId,
-                name,
-                email,
-                phone,
-                role
-            );
+        const employee = employeeService.createEmployee(
+            id,
+            businessId,
+            name,
+            email,
+            phone,
+            role
+        );
 
         res.status(201).json(employee);
     } catch (error) {
