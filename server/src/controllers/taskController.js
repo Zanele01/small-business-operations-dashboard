@@ -17,6 +17,7 @@ const getTaskById = (req, res, next) => {
     try {
         const task =
             taskService.getTaskById(
+                req.params.businessId,
                 req.params.taskId
             );
 

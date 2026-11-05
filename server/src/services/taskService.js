@@ -18,13 +18,15 @@ class TaskService {
         );
     }
 
-    getTaskById(taskId) {
-        const tasks = this.getAllTasks();
+	getTaskById(businessId, taskId) {
+		const tasks = this.getAllTasks();
 
-        return tasks.find(
-            (task) => task.id === taskId
-        );
-    }
+		return tasks.find(
+			(task) =>
+				task.businessId === businessId &&
+				task.id === taskId
+		);
+	}
 
     createTask(
         id,
