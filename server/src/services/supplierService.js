@@ -58,6 +58,13 @@ class SupplierService {
             }
         }
 
+        // Trim all validated string values.
+        id = id.trim();
+        businessId = businessId.trim();
+        name = name.trim();
+        email = email.trim();
+        phone = phone.trim();
+
         // Verify that the associated business exists.
         const businesses = businessService.getAllBusinesses();
 
