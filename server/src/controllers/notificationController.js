@@ -3,7 +3,8 @@ const notificationService = require("../services/notificationService");
 const getNotificationsByBusiness = (req, res, next) => {
     try {
         const notifications =
-            notificationService.getNotificationsByBusiness(           req.params.businessId
+            notificationService.getNotificationsByBusiness(
+                req.params.businessId
             );
 
         res.status(200).json(notifications);
@@ -16,6 +17,7 @@ const getNotificationById = (req, res, next) => {
     try {
         const notification =
             notificationService.getNotificationById(
+                req.params.businessId,
                 req.params.notificationId
             );
 
@@ -60,7 +62,8 @@ const markNotificationAsRead = (req, res, next) => {
     try {
         const notification =
             notificationService.markNotificationAsRead(
-			req.params.notificationId
+                req.params.businessId,
+                req.params.notificationId
             );
 
         res.status(200).json(notification);

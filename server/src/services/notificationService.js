@@ -18,11 +18,13 @@ class NotificationService {
         );
     }
 
-    getNotificationById(notificationId) {
+    getNotificationById(businessId, notificationId) {
         const notifications = this.getAllNotifications();
 
         return notifications.find(
-            (notification) => notification.id === notificationId
+            (notification) =>
+                notification.businessId === businessId &&
+                notification.id === notificationId
         );
     }
 
@@ -33,7 +35,7 @@ class NotificationService {
         message,
         type
     ) {
-        // Validate required fields
+        // Validate required fields.
         const fields = {
             id,
             businessId,
@@ -53,14 +55,14 @@ class NotificationService {
             }
         }
 
-        // Trim whitespace from validated fields
+        // Trim whitespace from validated fields.
         id = id.trim();
         businessId = businessId.trim();
         title = title.trim();
         message = message.trim();
         type = type.trim();
 
-        // Check notification type
+        // Check notification type.
         const validTypes = ["info", "warning", "success"];
 
         if (!validTypes.includes(type)) {
@@ -72,7 +74,7 @@ class NotificationService {
             throw error;
         }
 
-        // Check that the business exists
+        // Check that the business exists.
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
@@ -85,7 +87,7 @@ class NotificationService {
             throw error;
         }
 
-        // Check for duplicate ID
+        // Check for duplicate ID.
         const notifications = this.getAllNotifications();
 
         const duplicate = notifications.find(
@@ -101,7 +103,7 @@ class NotificationService {
             throw error;
         }
 
-        // Create and save notification
+        // Create and save notification.
         const notification = new Notification(
             id,
             businessId,
@@ -117,11 +119,13 @@ class NotificationService {
         return notification;
     }
 
-    markNotificationAsRead(notificationId) {
+    markNotificationAsRead(businessId, notificationId) {
         const notifications = this.getAllNotifications();
 
         const notification = notifications.find(
-            (notification) => notification.id === notificationId
+            (notification) =>
+                notification.businessId === businessId &&
+                notification.id === notificationId
         );
 
         if (!notification) {
