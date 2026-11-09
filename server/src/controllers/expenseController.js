@@ -2,7 +2,9 @@ const expenseService = require("../services/expenseService");
 
 const getAllExpenses = (req, res, next) => {
     try {
-        const expenses = expenseService.getAllExpenses();
+        const expenses = expenseService.getExpensesByBusiness(
+            req.params.businessId
+        );
 
         res.status(200).json(expenses);
     } catch (error) {
@@ -12,7 +14,10 @@ const getAllExpenses = (req, res, next) => {
 
 const getExpenseById = (req, res, next) => {
     try {
-        const expense = expenseService.getExpenseById(req.params.id);
+        const expense = expenseService.getExpenseById(
+            req.params.businessId,
+            req.params.expenseId
+        );
 
         if (!expense) {
             const error = new Error("Expense not found.");

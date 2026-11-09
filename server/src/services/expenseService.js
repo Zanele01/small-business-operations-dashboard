@@ -10,11 +10,21 @@ class ExpenseService {
         return fileStorage.read(FILE_NAME);
     }
 
-    getExpenseById(id) {
-        const expenses = fileStorage.read(FILE_NAME);
+    getExpensesByBusiness(businessId) {
+        const expenses = this.getAllExpenses();
+
+        return expenses.filter(
+            (expense) => expense.businessId === businessId
+        );
+    }
+
+    getExpenseById(businessId, expenseId) {
+        const expenses = this.getAllExpenses();
 
         return expenses.find(
-            (expense) => expense.id === id
+            (expense) =>
+                expense.businessId === businessId &&
+                expense.id === expenseId
         );
     }
 
@@ -96,14 +106,24 @@ class ExpenseService {
             throw error;
         }
 
+        // Normalise string values
+        const normalizedData = {
+            ...expenseData,
+            id: expenseData.id.trim(),
+            businessId: expenseData.businessId.trim(),
+            description: expenseData.description.trim(),
+            category: expenseData.category.trim(),
+            paymentMethod: expenseData.paymentMethod.trim()
+        };
+
         // Verify that the associated business exists
         const businesses = businessService.getAllBusinesses();
 
-        const businessExists = businesses.some(
-            (business) => business.id === expenseData.businessId
+        const business = businesses.find(
+            (business) => business.id === normalizedData.businessId
         );
 
-        if (!businessExists) {
+        if (!business) {
             const error = new Error(
                 "Business associated with this expense does not exist."
             );
@@ -113,10 +133,10 @@ class ExpenseService {
         }
 
         // Check for duplicate expense IDs
-        const expenses = fileStorage.read(FILE_NAME);
+        const expenses = this.getAllExpenses();
 
         const existingExpense = expenses.find(
-            (expense) => expense.id === expenseData.id
+            (expense) => expense.id === normalizedData.id
         );
 
         if (existingExpense) {
@@ -128,8 +148,11 @@ class ExpenseService {
             throw error;
         }
 
-        // Create the expense
-        const expense = new Expense(expenseData);
+        // Create the expense using the business currency
+        const expense = new Expense({
+            ...normalizedData,
+            currency: business.currency || "ZAR"
+        });
 
         // Save the expense to JSON storage
         expenses.push(expense);

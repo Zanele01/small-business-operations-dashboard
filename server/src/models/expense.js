@@ -5,7 +5,8 @@ class Expense {
         description,
         amount,
         category,
-        paymentMethod
+        paymentMethod,
+        currency = "ZAR"
     }) {
         this.id = id;
         this.businessId = businessId;
@@ -13,8 +14,7 @@ class Expense {
         this.amount = amount;
         this.category = category;
         this.paymentMethod = paymentMethod;
-
-        this.currency = "ZAR";
+        this.currency = currency;
 
         const now = new Date().toISOString();
 

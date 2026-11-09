@@ -8,9 +8,9 @@ const {
 
 const router = express.Router();
 
-router.get("/", getAllExpenses);
+router.get("/:businessId", getAllExpenses);
 
-router.get("/:id", getExpenseById);
+router.get("/:businessId/:expenseId", getExpenseById);
 
 router.post("/", createExpense);
 
