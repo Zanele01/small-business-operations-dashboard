@@ -10,11 +10,21 @@ class ProductService {
         return fileStorage.read(FILE_NAME);
     }
 
-    getProductById(id) {
+    getProductsByBusiness(businessId) {
+        const products = fileStorage.read(FILE_NAME);
+
+        return products.filter(
+            (product) => product.businessId === businessId
+        );
+    }
+
+    getProductById(businessId, productId) {
         const products = fileStorage.read(FILE_NAME);
 
         return products.find(
-            (product) => product.id === id
+            (product) =>
+                product.id === productId &&
+                product.businessId === businessId
         );
     }
 
@@ -137,11 +147,26 @@ class ProductService {
             throw error;
         }
 
+        // Normalise string fields
+        const normalisedData = {
+            ...productData,
+            id: productData.id.trim(),
+            businessId: productData.businessId.trim(),
+            name: productData.name.trim(),
+            category: productData.category.trim(),
+            description: productData.description === undefined
+                ? undefined
+                : productData.description.trim(),
+            currency: productData.currency === undefined
+                ? "ZAR"
+                : productData.currency.trim().toUpperCase()
+        };
+
         // Verify that the associated business exists
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
-            (business) => business.id === productData.businessId
+            (business) => business.id === normalisedData.businessId
         );
 
         if (!businessExists) {
@@ -157,7 +182,7 @@ class ProductService {
         const products = fileStorage.read(FILE_NAME);
 
         const existingProduct = products.find(
-            (product) => product.id === productData.id
+            (product) => product.id === normalisedData.id
         );
 
         if (existingProduct) {
@@ -170,10 +195,61 @@ class ProductService {
         }
 
         // Create the product
-        const product = new Product(productData);
+        const product = new Product(normalisedData);
 
         // Save the product to JSON storage
         products.push(product);
+
+        fileStorage.write(FILE_NAME, products);
+
+        return product;
+    }
+
+    reduceStock(businessId, productId, quantity) {
+
+        // Validate quantity
+        if (
+            !Number.isInteger(quantity) ||
+            quantity <= 0
+        ) {
+            const error = new Error(
+                "Stock reduction quantity must be a whole number greater than 0."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const products = fileStorage.read(FILE_NAME);
+
+        const productIndex = products.findIndex(
+            (product) =>
+                product.id === productId &&
+                product.businessId === businessId
+        );
+
+        if (productIndex === -1) {
+            const error = new Error("Product not found.");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const product = products[productIndex];
+
+        if (product.stockQuantity < quantity) {
+            const error = new Error(
+                "Insufficient stock available."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Reduce stock and update timestamp
+        product.stockQuantity -= quantity;
+        product.updatedAt = new Date().toISOString();
+
+        products[productIndex] = product;
 
         fileStorage.write(FILE_NAME, products);
 

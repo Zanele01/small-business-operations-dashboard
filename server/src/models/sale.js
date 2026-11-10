@@ -5,18 +5,27 @@ class Sale {
         productId,
         quantity,
         unitPrice,
-        paymentMethod
+        paymentMethod,
+        currency = "ZAR"
     }) {
+        const totalAmount = quantity * unitPrice;
+
+        if (!Number.isFinite(totalAmount)) {
+            throw new Error(
+                "Sale total amount must be a finite number."
+            );
+        }
+
         this.id = id;
         this.businessId = businessId;
         this.productId = productId;
         this.quantity = quantity;
         this.unitPrice = unitPrice;
 
-        this.totalAmount = quantity * unitPrice;
+        this.totalAmount = totalAmount;
 
         this.paymentMethod = paymentMethod;
-        this.currency = "ZAR";
+        this.currency = currency;
 
         const now = new Date().toISOString();
 

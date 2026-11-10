@@ -4,6 +4,9 @@ const businessService = require("./businessService");
 const productService = require("./productService");
 
 const FILE_NAME = "sales.json";
+const PRODUCT_FILE_NAME = "products.json";
+
+const ALLOWED_PAYMENT_METHODS = ["Card"];
 
 class SaleService {
 
@@ -11,17 +14,27 @@ class SaleService {
         return fileStorage.read(FILE_NAME);
     }
 
-    getSaleById(id) {
+    getSalesByBusiness(businessId) {
+        const sales = fileStorage.read(FILE_NAME);
+
+        return sales.filter(
+            (sale) => sale.businessId === businessId
+        );
+    }
+
+    getSaleById(businessId, saleId) {
         const sales = fileStorage.read(FILE_NAME);
 
         return sales.find(
-            (sale) => sale.id === id
+            (sale) =>
+                sale.id === saleId &&
+                sale.businessId === businessId
         );
     }
 
     createSale(saleData) {
 
-        // Validate the request body
+        // Validate the request body.
         if (
             !saleData ||
             typeof saleData !== "object" ||
@@ -35,7 +48,7 @@ class SaleService {
             throw error;
         }
 
-        // Validate required fields
+        // Validate required fields.
         const requiredFields = [
             "id",
             "businessId",
@@ -60,7 +73,7 @@ class SaleService {
             }
         }
 
-        // Validate required string fields
+        // Validate required string fields.
         const stringFields = [
             "id",
             "businessId",
@@ -82,10 +95,38 @@ class SaleService {
             }
         }
 
-        // Validate quantity
+        // Normalise string fields.
+        const normalisedData = {
+            ...saleData,
+            id: saleData.id.trim(),
+            businessId: saleData.businessId.trim(),
+            productId: saleData.productId.trim(),
+            paymentMethod: saleData.paymentMethod.trim()
+        };
+
+        // Validate the payment method for the first deployment.
+        normalisedData.paymentMethod =
+            normalisedData.paymentMethod.toLowerCase() === "card"
+                ? "Card"
+                : normalisedData.paymentMethod;
+
         if (
-            !Number.isInteger(saleData.quantity) ||
-            saleData.quantity <= 0
+            !ALLOWED_PAYMENT_METHODS.includes(
+                normalisedData.paymentMethod
+            )
+        ) {
+            const error = new Error(
+                "Unsupported payment method. Only Card payments are accepted."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Validate quantity.
+        if (
+            !Number.isInteger(normalisedData.quantity) ||
+            normalisedData.quantity <= 0
         ) {
             const error = new Error(
                 "Quantity must be a whole number greater than 0."
@@ -95,11 +136,11 @@ class SaleService {
             throw error;
         }
 
-        // Validate unit price
+        // Validate unit price.
         if (
-            typeof saleData.unitPrice !== "number" ||
-            !Number.isFinite(saleData.unitPrice) ||
-            saleData.unitPrice < 0
+            typeof normalisedData.unitPrice !== "number" ||
+            !Number.isFinite(normalisedData.unitPrice) ||
+            normalisedData.unitPrice < 0
         ) {
             const error = new Error(
                 "Unit price must be a finite number greater than or equal to 0."
@@ -109,11 +150,24 @@ class SaleService {
             throw error;
         }
 
-        // Verify that the associated business exists
+        // Validate the calculated sale total.
+        const totalAmount =
+            normalisedData.quantity * normalisedData.unitPrice;
+
+        if (!Number.isFinite(totalAmount)) {
+            const error = new Error(
+                "Sale total amount must be a finite number."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Verify that the associated business exists.
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
-            (business) => business.id === saleData.businessId
+            (business) => business.id === normalisedData.businessId
         );
 
         if (!businessExists) {
@@ -125,9 +179,10 @@ class SaleService {
             throw error;
         }
 
-        // Verify that the associated product exists
+        // Verify that the product belongs to the specified business.
         const product = productService.getProductById(
-            saleData.productId
+            normalisedData.businessId,
+            normalisedData.productId
         );
 
         if (!product) {
@@ -139,21 +194,34 @@ class SaleService {
             throw error;
         }
 
-        // Ensure the product belongs to the specified business
-        if (product.businessId !== saleData.businessId) {
+        // Validate the product's stored stock quantity.
+        if (
+            !Number.isInteger(product.stockQuantity) ||
+            product.stockQuantity < 0
+        ) {
             const error = new Error(
-                "Product does not belong to the specified business."
+                "Product stock data is invalid."
+            );
+
+            error.statusCode = 500;
+            throw error;
+        }
+
+        // Check whether sufficient stock is available.
+        if (product.stockQuantity < normalisedData.quantity) {
+            const error = new Error(
+                "Insufficient stock available."
             );
 
             error.statusCode = 400;
             throw error;
         }
 
-        // Check for duplicate sale IDs
+        // Check for duplicate sale IDs.
         const sales = fileStorage.read(FILE_NAME);
 
         const existingSale = sales.find(
-            (sale) => sale.id === saleData.id
+            (sale) => sale.id === normalisedData.id
         );
 
         if (existingSale) {
@@ -165,13 +233,51 @@ class SaleService {
             throw error;
         }
 
-        // Create the sale
-        const sale = new Sale(saleData);
+        // Create the sale using the submitted unit price.
+        // Currency is taken from the associated product.
+        const sale = new Sale({
+            ...normalisedData,
+            currency: product.currency || "ZAR"
+        });
 
-        // Save the sale to JSON storage
-        sales.push(sale);
+        // Prepare the updated sales collection.
+        const updatedSales = [...sales, sale];
 
-        fileStorage.write(FILE_NAME, sales);
+        // Read all products so that other businesses' products
+        // remain unchanged.
+        const products = productService.getAllProducts();
+
+        const now = new Date().toISOString();
+
+        // Prepare the updated product collection.
+        const updatedProducts = products.map((item) => {
+
+            if (
+                item.id === normalisedData.productId &&
+                item.businessId === normalisedData.businessId
+            ) {
+                return {
+                    ...item,
+                    stockQuantity:
+                        item.stockQuantity - normalisedData.quantity,
+                    updatedAt: now
+                };
+            }
+
+            return item;
+        });
+
+        // Save both files using the coordinated storage operation.
+        fileStorage.writeMultiple([
+            {
+                fileName: FILE_NAME,
+                data: updatedSales
+            },
+            {
+                fileName: PRODUCT_FILE_NAME,
+                data: updatedProducts
+            }
+        ]);
 
         return sale;
     }

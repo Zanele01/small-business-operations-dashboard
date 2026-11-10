@@ -2,7 +2,9 @@ const productService = require("../services/productService");
 
 const getAllProducts = (req, res, next) => {
     try {
-        const products = productService.getAllProducts();
+        const products = productService.getProductsByBusiness(
+            req.params.businessId
+        );
 
         res.status(200).json(products);
     } catch (error) {
@@ -12,7 +14,10 @@ const getAllProducts = (req, res, next) => {
 
 const getProductById = (req, res, next) => {
     try {
-        const product = productService.getProductById(req.params.id);
+        const product = productService.getProductById(
+            req.params.businessId,
+            req.params.productId
+        );
 
         if (!product) {
             const error = new Error("Product not found.");

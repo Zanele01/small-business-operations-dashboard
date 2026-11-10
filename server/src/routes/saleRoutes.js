@@ -8,10 +8,8 @@ const {
 
 const router = express.Router();
 
-router.get("/", getAllSales);
-
-router.get("/:id", getSaleById);
-
+router.get("/:businessId", getAllSales);
+router.get("/:businessId/:saleId", getSaleById);
 router.post("/", createSale);
 
 module.exports = router;

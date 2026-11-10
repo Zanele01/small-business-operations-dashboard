@@ -2,7 +2,9 @@ const saleService = require("../services/saleService");
 
 const getAllSales = (req, res, next) => {
     try {
-        const sales = saleService.getAllSales();
+        const sales = saleService.getSalesByBusiness(
+            req.params.businessId
+        );
 
         res.status(200).json(sales);
     } catch (error) {
@@ -12,7 +14,10 @@ const getAllSales = (req, res, next) => {
 
 const getSaleById = (req, res, next) => {
     try {
-        const sale = saleService.getSaleById(req.params.id);
+        const sale = saleService.getSaleById(
+            req.params.businessId,
+            req.params.saleId
+        );
 
         if (!sale) {
             const error = new Error("Sale not found.");

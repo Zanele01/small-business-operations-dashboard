@@ -8,10 +8,13 @@ const {
 
 const router = express.Router();
 
-router.get("/", getAllProducts);
+// Get all products belonging to a business
+router.get("/:businessId", getAllProducts);
 
-router.get("/:id", getProductById);
+// Get one product belonging to a business
+router.get("/:businessId/:productId", getProductById);
 
+// Create a product
 router.post("/", createProduct);
 
 module.exports = router;
