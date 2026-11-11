@@ -1,14 +1,26 @@
-[
+[ 
   {
-    "id": "SALE001",
+    "id": "SALE005",
     "businessId": "BUS001",
     "productId": "PROD001",
-    "quantity": 2,
+    "quantity": 1,
     "unitPrice": 120,
-    "totalAmount": 240,
-    "paymentMethod": "Cash",
+    "totalAmount": 120,
+    "paymentMethod": "Card",
     "currency": "ZAR",
-    "createdAt": "2026-09-10T08:33:26.098Z",
-    "updatedAt": "2026-09-10T08:33:26.098Z"
+    "createdAt": "2026-11-09T08:14:37.192Z",
+    "updatedAt": "2026-11-09T08:14:37.192Z"
+  },
+  {
+    "id": "SALE006",
+    "businessId": "BUS001",
+    "productId": "PROD001",
+    "quantity": 1,
+    "unitPrice": 120,
+    "totalAmount": 120,
+    "paymentMethod": "Card",
+    "currency": "ZAR",
+    "createdAt": "2026-11-09T08:16:56.610Z",
+    "updatedAt": "2026-11-09T08:16:56.610Z"
   }
 ]

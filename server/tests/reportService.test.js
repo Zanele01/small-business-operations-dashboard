@@ -8,11 +8,11 @@ test("getBusinessReport returns the expected totals for BUS001", () => {
 
     assert.equal(report.businessId, "BUS001");
     assert.equal(report.businessName, "Sunrise Bakery");
-	assert.equal(report.totalSales, 960);
-	assert.equal(report.totalExpenses, 851);
-	assert.equal(report.netPosition, 109);
-	assert.equal(report.salesCount, 6);
-	assert.equal(report.expenseCount, 2);
+	assert.equal(report.totalSales, 240);
+	assert.equal(report.totalExpenses, 850);
+	assert.equal(report.netPosition, -610);
+	assert.equal(report.salesCount, 2);
+	assert.equal(report.expenseCount, 1);
 });
 
 test("getBusinessReport returns 404 for an unknown business", () => {

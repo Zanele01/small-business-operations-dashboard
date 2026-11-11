@@ -5,10 +5,10 @@
     "name": "Chocolate Cake",
     "description": "Freshly baked chocolate cake",
     "price": 120,
-    "stockQuantity": 10,
+    "stockQuantity": 8,
     "category": "Cakes",
     "currency": "ZAR",
     "createdAt": "2026-08-23T15:39:49.757Z",
-    "updatedAt": "2026-08-23T15:39:49.757Z"
+    "updatedAt": "2026-11-09T08:16:56.611Z"
   }
 ]
