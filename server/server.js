@@ -16,8 +16,13 @@ const reportRoutes = require("./src/routes/reportRoutes");
 
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+const allowedOrigin = process.env.CLIENT_ORIGIN || "http://localhost:5173";
+
+app.use(cors({
+    origin: allowedOrigin
+}));
+
+app.use(express.json({ limit: "10kb" }));
 
 app.get("/health", (req, res) => {
     res.status(200).json({
@@ -40,7 +45,7 @@ app.use("/api/reports", reportRoutes);
 
 app.use(errorHandler);
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
