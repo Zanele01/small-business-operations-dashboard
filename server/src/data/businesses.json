@@ -37,6 +37,7 @@
   },
   {
     "id": "BUS004",
+    "businessName": "Johannesburg Hardware",
     "ownerName": "Michael Jones",
     "email": "michael@example.co.za",
     "phone": "+27 82 111 2222",
