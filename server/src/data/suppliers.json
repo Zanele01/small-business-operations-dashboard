@@ -14,5 +14,13 @@
     "email": "sales@capepackaging.example.com",
     "phone": "+27824445566",
     "createdAt": "2026-10-01T08:58:58.349Z"
+  },
+  {
+    "id": "SUP003",
+    "businessId": "BUS001",
+    "name": "Fresh Produce Supplies",
+    "email": "sales@freshproduce.com",
+    "phone": "0827654321",
+    "createdAt": "2026-11-11T09:49:58.932Z"
   }
 ]

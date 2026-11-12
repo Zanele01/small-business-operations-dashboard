@@ -16,5 +16,14 @@
     "phone": "+27826667788",
     "role": "Store Manager",
     "createdAt": "2026-10-08T08:18:49.610Z"
+  },
+  {
+    "id": "EMP003",
+    "businessId": "BUS001",
+    "name": "David Brown",
+    "email": "david.brown@sunrisebakery.com",
+    "phone": "0823456789",
+    "role": "Inventory Coordinator",
+    "createdAt": "2026-11-11T09:54:50.597Z"
   }
 ]

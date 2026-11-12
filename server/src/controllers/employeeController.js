@@ -1,3 +1,4 @@
+
 const employeeService = require("../services/employeeService");
 
 const getEmployeesByBusiness = (req, res, next) => {
@@ -33,6 +34,20 @@ const getEmployeeById = (req, res, next) => {
 
 const createEmployee = (req, res, next) => {
     try {
+        // Validate the request body before accessing its properties.
+        if (
+            !req.body ||
+            typeof req.body !== "object" ||
+            Array.isArray(req.body)
+        ) {
+            const error = new Error(
+                "Request body must be a valid JSON object."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
         const {
             id,
             businessId,

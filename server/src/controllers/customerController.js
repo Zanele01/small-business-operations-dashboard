@@ -33,6 +33,18 @@ const getCustomerById = (req, res, next) => {
 
 const createCustomer = (req, res, next) => {
     try {
+        if (
+            !req.body ||
+            typeof req.body !== "object" ||
+            Array.isArray(req.body)
+        ) {
+            const error = new Error(
+                "Request body must be a valid JSON object."
+            );
+            error.statusCode = 400;
+            throw error;
+        }
+
         const {
             id,
             businessId,

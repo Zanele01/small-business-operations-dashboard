@@ -1,3 +1,4 @@
+
 const Customer = require("../models/customer");
 const businessService = require("./businessService");
 const fileStorage = require("../utils/fileStorage");
@@ -61,11 +62,30 @@ class CustomerService {
             throw error;
         }
 
+        // Normalise input values.
+        const normalizedId = id.trim();
+        const normalizedBusinessId = businessId.trim();
+        const normalizedName = name.trim();
+        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedPhone = phone.trim();
+
+        // Validate email format.
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(normalizedEmail)) {
+            const error = new Error(
+                "Please provide a valid email address."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
         // Confirm that the business exists.
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
-            (business) => business.id === businessId.trim()
+            (business) => business.id === normalizedBusinessId
         );
 
         if (!businessExists) {
@@ -78,7 +98,7 @@ class CustomerService {
         const customers = this.getAllCustomers();
 
         const duplicate = customers.find(
-            (customer) => customer.id === id.trim()
+            (customer) => customer.id === normalizedId
         );
 
         if (duplicate) {
@@ -92,11 +112,11 @@ class CustomerService {
 
         // Create and save the customer after validation.
         const customer = new Customer(
-            id.trim(),
-            businessId.trim(),
-            name.trim(),
-            email.trim(),
-            phone.trim()
+            normalizedId,
+            normalizedBusinessId,
+            normalizedName,
+            normalizedEmail,
+            normalizedPhone
         );
 
         customers.push(customer);

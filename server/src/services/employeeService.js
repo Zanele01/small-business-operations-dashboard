@@ -60,19 +60,31 @@ class EmployeeService {
             }
         }
 
-        // Trim all validated string values.
-        id = id.trim();
-        businessId = businessId.trim();
-        name = name.trim();
-        email = email.trim();
-        phone = phone.trim();
-        role = role.trim();
+        // Normalise input values.
+        const normalizedId = id.trim();
+        const normalizedBusinessId = businessId.trim();
+        const normalizedName = name.trim();
+        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedPhone = phone.trim();
+        const normalizedRole = role.trim();
+
+        // Validate email format.
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (!emailRegex.test(normalizedEmail)) {
+            const error = new Error(
+                "Please provide a valid email address."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
 
         // Verify that the associated business exists.
         const businesses = businessService.getAllBusinesses();
 
         const businessExists = businesses.some(
-            (business) => business.id === businessId
+            (business) => business.id === normalizedBusinessId
         );
 
         if (!businessExists) {
@@ -85,7 +97,7 @@ class EmployeeService {
         const employees = this.getAllEmployees();
 
         const duplicate = employees.find(
-            (employee) => employee.id === id
+            (employee) => employee.id === normalizedId
         );
 
         if (duplicate) {
@@ -99,12 +111,12 @@ class EmployeeService {
 
         // Create the employee.
         const employee = new Employee(
-            id,
-            businessId,
-            name,
-            email,
-            phone,
-            role
+            normalizedId,
+            normalizedBusinessId,
+            normalizedName,
+            normalizedEmail,
+            normalizedPhone,
+            normalizedRole
         );
 
         // Persist the validated employee.
