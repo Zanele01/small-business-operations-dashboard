@@ -35,6 +35,19 @@ const getTaskById = (req, res, next) => {
 
 const createTask = (req, res, next) => {
     try {
+        if (
+            !req.body ||
+            typeof req.body !== "object" ||
+            Array.isArray(req.body)
+        ) {
+            const error = new Error(
+                "Request body must be a valid JSON object."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
         const {
             id,
             businessId,
@@ -60,8 +73,37 @@ const createTask = (req, res, next) => {
     }
 };
 
+const updateTask = (req, res, next) => {
+    try {
+        if (
+            !req.body ||
+            typeof req.body !== "object" ||
+            Array.isArray(req.body)
+        ) {
+            const error = new Error(
+                "Request body must be a valid JSON object."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        const task =
+            taskService.updateTask(
+                req.params.businessId,
+                req.params.taskId,
+                req.body
+            );
+
+        res.status(200).json(task);
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getTasksByBusiness,
     getTaskById,
-    createTask
+    createTask,
+    updateTask
 };

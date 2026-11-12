@@ -4,7 +4,7 @@
     "businessId": "BUS001",
     "title": "Check bakery stock",
     "description": "Review current stock levels for flour, sugar, and baking ingredients.",
-    "status": "Pending",
+    "status": "In Progress",
     "priority": "High",
     "createdAt": "2026-10-08T09:02:25.652Z"
   },
@@ -14,7 +14,25 @@
     "title": "Clean display area",
     "description": "Clean and organize the customer display area before opening.",
     "status": "Pending",
-    "priority": "Medium",
+    "priority": "High",
     "createdAt": "2026-10-08T09:08:44.223Z"
+  },
+  {
+    "id": "TASK003",
+    "businessId": "BUS001",
+    "title": "Complete Stock Review",
+    "description": "Review all stock levels and prepare a restocking list.",
+    "status": "Completed",
+    "priority": "Medium",
+    "createdAt": "2026-11-11T10:09:35.959Z"
+  },
+  {
+    "id": "TASK004",
+    "businessId": "BUS001",
+    "title": "Update Product Records",
+    "description": "Update the product inventory records.",
+    "status": "In Progress",
+    "priority": "Medium",
+    "createdAt": "2026-11-11T10:10:11.561Z"
   }
 ]
