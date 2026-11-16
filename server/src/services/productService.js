@@ -124,10 +124,10 @@ class ProductService {
         if (
             typeof productData.price !== "number" ||
             !Number.isFinite(productData.price) ||
-            productData.price < 0
+            productData.price <= 0
         ) {
             const error = new Error(
-                "Price must be a finite number greater than or equal to 0."
+                "Price must be a finite number greater than 0."
             );
 
             error.statusCode = 400;

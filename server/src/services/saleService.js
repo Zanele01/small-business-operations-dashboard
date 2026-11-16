@@ -48,13 +48,22 @@ class SaleService {
             throw error;
         }
 
+        // The sale price must come from the product catalogue.
+        if (Object.prototype.hasOwnProperty.call(saleData, "unitPrice")) {
+            const error = new Error(
+                "unitPrice must not be provided. Sale prices are taken from the product catalogue."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
         // Validate required fields.
         const requiredFields = [
             "id",
             "businessId",
             "productId",
             "quantity",
-            "unitPrice",
             "paymentMethod"
         ];
 
@@ -97,10 +106,10 @@ class SaleService {
 
         // Normalise string fields.
         const normalisedData = {
-            ...saleData,
             id: saleData.id.trim(),
             businessId: saleData.businessId.trim(),
             productId: saleData.productId.trim(),
+            quantity: saleData.quantity,
             paymentMethod: saleData.paymentMethod.trim()
         };
 
@@ -136,33 +145,6 @@ class SaleService {
             throw error;
         }
 
-        // Validate unit price.
-        if (
-            typeof normalisedData.unitPrice !== "number" ||
-            !Number.isFinite(normalisedData.unitPrice) ||
-            normalisedData.unitPrice < 0
-        ) {
-            const error = new Error(
-                "Unit price must be a finite number greater than or equal to 0."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
-        // Validate the calculated sale total.
-        const totalAmount =
-            normalisedData.quantity * normalisedData.unitPrice;
-
-        if (!Number.isFinite(totalAmount)) {
-            const error = new Error(
-                "Sale total amount must be a finite number."
-            );
-
-            error.statusCode = 400;
-            throw error;
-        }
-
         // Verify that the associated business exists.
         const businesses = businessService.getAllBusinesses();
 
@@ -191,6 +173,33 @@ class SaleService {
             );
 
             error.statusCode = 404;
+            throw error;
+        }
+
+        // Validate the product's stored catalogue price.
+        if (
+            typeof product.price !== "number" ||
+            !Number.isFinite(product.price) ||
+            product.price <= 0
+        ) {
+            const error = new Error(
+                "Product price data is invalid."
+            );
+
+            error.statusCode = 500;
+            throw error;
+        }
+
+        // Calculate the sale total using the catalogue price.
+        const totalAmount =
+            normalisedData.quantity * product.price;
+
+        if (!Number.isFinite(totalAmount)) {
+            const error = new Error(
+                "Sale total amount must be a finite number."
+            );
+
+            error.statusCode = 400;
             throw error;
         }
 
@@ -233,10 +242,11 @@ class SaleService {
             throw error;
         }
 
-        // Create the sale using the submitted unit price.
-        // Currency is taken from the associated product.
+        // Create the sale using the product's catalogue price.
+        // The model stores this price as a historical snapshot.
         const sale = new Sale({
             ...normalisedData,
+            unitPrice: product.price,
             currency: product.currency || "ZAR"
         });
 

@@ -16,7 +16,8 @@ const fixtureFiles = [
     "customers.json",
     "suppliers.json",
     "employees.json",
-    "tasks.json"
+    "tasks.json",
+    "sales.json"
 ];
 
 for (const fileName of fixtureFiles) {
@@ -306,7 +307,37 @@ test("POST /api/products rejects negative prices", async () => {
     assert.equal(response.status, 400);
     assert.equal(
         body.error,
-        "Price must be a finite number greater than or equal to 0."
+        "Price must be a finite number greater than 0."
+    );
+});
+
+test("POST /api/products rejects zero prices", async () => {
+    const invalidProduct = {
+        id: "PROD_TEST_ZERO_PRICE",
+        businessId: "BUS001",
+        name: "Zero Price Product",
+        price: 0,
+        stockQuantity: 5,
+        category: "Test Category"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/products`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidProduct)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "Price must be a finite number greater than 0."
     );
 });
 
@@ -1463,4 +1494,349 @@ test("PATCH /api/tasks does not update a task belonging to another business", as
 
     assert.equal(response.status, 404);
     assert.equal(body.error, "Task not found.");
+});
+
+test("GET /api/sales/:businessId returns sales for that business", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/sales/BUS001`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.length, 2);
+    assert.ok(
+        body.every((sale) => sale.businessId === "BUS001")
+    );
+});
+
+test("GET /api/sales/:businessId returns an empty array when no sales exist", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/sales/BUS002`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, []);
+});
+
+test("GET /api/sales/:businessId/:saleId returns the requested sale", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/sales/BUS001/SALE005`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.id, "SALE005");
+    assert.equal(body.businessId, "BUS001");
+    assert.equal(body.productId, "PROD001");
+    assert.equal(body.unitPrice, 120);
+    assert.equal(body.totalAmount, 120);
+});
+
+test("GET /api/sales/:businessId/:saleId returns 404 for a missing sale", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/sales/BUS001/SALE999`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(body.error, "Sale not found.");
+});
+
+test("GET /api/sales/:businessId/:saleId does not return another business's sale", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/sales/BUS002/SALE005`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(body.error, "Sale not found.");
+});
+
+test("POST /api/sales rejects a supplied unit price", async () => {
+    const invalidSale = {
+        id: "SALE_TEST_PRICE",
+        businessId: "BUS001",
+        productId: "PROD001",
+        quantity: 1,
+        unitPrice: 100,
+        paymentMethod: "Card"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "unitPrice must not be provided. Sale prices are taken from the product catalogue."
+    );
+});
+
+test("POST /api/sales rejects unsupported payment methods", async () => {
+    const invalidSale = {
+        id: "SALE_TEST_CASH",
+        businessId: "BUS001",
+        productId: "PROD001",
+        quantity: 1,
+        paymentMethod: "Cash"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "Unsupported payment method. Only Card payments are accepted."
+    );
+});
+
+test("POST /api/sales rejects zero quantities", async () => {
+    const invalidSale = {
+        id: "SALE_TEST_ZERO_QTY",
+        businessId: "BUS001",
+        productId: "PROD001",
+        quantity: 0,
+        paymentMethod: "Card"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "Quantity must be a whole number greater than 0."
+    );
+});
+
+test("POST /api/sales rejects missing required fields", async () => {
+    const invalidSale = {
+        id: "SALE_TEST_MISSING",
+        businessId: "BUS001",
+        productId: "PROD001",
+        quantity: 1
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "paymentMethod is required."
+    );
+});
+
+test("POST /api/sales rejects sales linked to nonexistent businesses", async () => {
+    const invalidSale = {
+        id: "SALE_TEST_BUSINESS",
+        businessId: "BUS999",
+        productId: "PROD001",
+        quantity: 1,
+        paymentMethod: "Card"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(
+        body.error,
+        "Business associated with this sale does not exist."
+    );
+});
+
+test("POST /api/sales rejects products belonging to another business", async () => {
+    const invalidSale = {
+        id: "SALE_TEST_PRODUCT",
+        businessId: "BUS002",
+        productId: "PROD001",
+        quantity: 1,
+        paymentMethod: "Card"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(
+        body.error,
+        "Product associated with this sale does not exist."
+    );
+});
+
+test("POST /api/sales rejects duplicate sale IDs", async () => {
+    const invalidSale = {
+        id: "SALE005",
+        businessId: "BUS001",
+        productId: "PROD001",
+        quantity: 1,
+        paymentMethod: "Card"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 409);
+    assert.equal(body.error, "Sale ID already exists.");
+});
+
+test("POST /api/sales rejects sales when stock is insufficient", async () => {
+    const invalidSale = {
+        id: "SALE_TEST_STOCK",
+        businessId: "BUS001",
+        productId: "PROD001",
+        quantity: 100,
+        paymentMethod: "Card"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "Insufficient stock available."
+    );
+});
+
+test("POST /api/sales creates a sale using the catalogue price and updates stock", async () => {
+    const newSale = {
+        id: "SALE_TEST_001",
+        businessId: "BUS001",
+        productId: "PROD001",
+        quantity: 2,
+        paymentMethod: "card"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/sales`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(newSale)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 201);
+    assert.equal(body.id, "SALE_TEST_001");
+    assert.equal(body.businessId, "BUS001");
+    assert.equal(body.productId, "PROD001");
+    assert.equal(body.quantity, 2);
+    assert.equal(body.unitPrice, 120);
+    assert.equal(body.totalAmount, 240);
+    assert.equal(body.paymentMethod, "Card");
+    assert.equal(body.currency, "ZAR");
+    assert.ok(body.createdAt);
+    assert.ok(body.updatedAt);
+
+    const productResponse = await fetch(
+        `${baseUrl}/api/products/BUS001/PROD001`
+    );
+
+    const updatedProduct = await productResponse.json();
+
+    assert.equal(productResponse.status, 200);
+    assert.equal(updatedProduct.stockQuantity, 6);
+
+    const saleResponse = await fetch(
+        `${baseUrl}/api/sales/BUS001/SALE_TEST_001`
+    );
+
+    const savedSale = await saleResponse.json();
+
+    assert.equal(saleResponse.status, 200);
+    assert.equal(savedSale.id, "SALE_TEST_001");
+    assert.equal(savedSale.totalAmount, 240);
 });
