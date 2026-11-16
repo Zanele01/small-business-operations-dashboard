@@ -1,11 +1,11 @@
-
 const fs = require("fs");
 const path = require("path");
 
 class FileStorage {
-
     constructor() {
-        this.dataDirectory = path.join(__dirname, "..", "data");
+        this.dataDirectory = process.env.DATA_DIRECTORY
+            ? path.resolve(process.env.DATA_DIRECTORY)
+            : path.join(__dirname, "..", "data");
     }
 
     getFilePath(fileName) {
@@ -140,9 +140,7 @@ class FileStorage {
 
                 item.replaced = true;
             }
-
         } catch (error) {
-
             // Attempt to restore the original files.
             const rollbackErrors = [];
 
@@ -179,9 +177,7 @@ class FileStorage {
             }
 
             throw error;
-
         } finally {
-
             // Remove leftover temporary files.
             for (const item of preparedFiles) {
                 if (fs.existsSync(item.temporaryPath)) {
