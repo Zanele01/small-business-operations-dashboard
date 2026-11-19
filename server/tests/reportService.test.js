@@ -43,3 +43,108 @@ test("getBusinessReport rejects a from date later than the to date", () => {
         }
     );
 });
+
+test("getBusinessReport rejects an invalid from date", () => {
+    assert.throws(
+        () => reportService.getBusinessReport(
+            "BUS001",
+            "not-a-date"
+        ),
+        (error) => {
+            assert.equal(error.statusCode, 400);
+            assert.equal(error.message, "Invalid from date.");
+            return true;
+        }
+    );
+});
+
+test("getBusinessReport rejects an invalid to date", () => {
+    assert.throws(
+        () => reportService.getBusinessReport(
+            "BUS001",
+            undefined,
+            "not-a-date"
+        ),
+        (error) => {
+            assert.equal(error.statusCode, 400);
+            assert.equal(error.message, "Invalid to date.");
+            return true;
+        }
+    );
+});
+
+test("getBusinessReport filters expenses by date range", () => {
+    const report = reportService.getBusinessReport(
+        "BUS001",
+        "2026-09-11",
+        "2026-09-11"
+    );
+
+    assert.equal(report.totalExpenses, 850);
+    assert.equal(report.expenseCount, 1);
+});
+
+test("getBusinessReport filters sales by date range", () => {
+    const report = reportService.getBusinessReport(
+        "BUS001",
+        "2026-09-11",
+        "2026-09-11"
+    );
+
+    assert.equal(report.totalSales, 0);
+    assert.equal(report.salesCount, 0);
+});
+
+test("getBusinessReport includes sales throughout the to date", () => {
+    const report = reportService.getBusinessReport(
+        "BUS001",
+        "2026-11-09",
+        "2026-11-09"
+    );
+
+    assert.equal(report.totalSales, 240);
+    assert.equal(report.salesCount, 2);
+});
+
+test("getBusinessReport rejects impossible calendar dates", () => {
+    assert.throws(
+        () => reportService.getBusinessReport(
+            "BUS001",
+            "2026-02-30"
+        ),
+        (error) => {
+            assert.equal(error.statusCode, 400);
+            assert.equal(error.message, "Invalid from date.");
+            return true;
+        }
+    );
+});
+
+test("getBusinessReport rejects an impossible to date", () => {
+    assert.throws(
+        () => reportService.getBusinessReport(
+            "BUS001",
+            undefined,
+            "2026-02-30"
+        ),
+        (error) => {
+            assert.equal(error.statusCode, 400);
+            assert.equal(error.message, "Invalid to date.");
+            return true;
+        }
+    );
+});
+
+test("getBusinessReport rejects dates not in YYYY-MM-DD format", () => {
+    assert.throws(
+        () => reportService.getBusinessReport(
+            "BUS001",
+            "11/09/2026"
+        ),
+        (error) => {
+            assert.equal(error.statusCode, 400);
+            assert.equal(error.message, "Invalid from date.");
+            return true;
+        }
+    );
+});

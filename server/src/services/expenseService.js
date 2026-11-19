@@ -96,10 +96,10 @@ class ExpenseService {
         if (
             typeof expenseData.amount !== "number" ||
             !Number.isFinite(expenseData.amount) ||
-            expenseData.amount < 0
+            expenseData.amount <= 0
         ) {
             const error = new Error(
-                "Amount must be a finite number greater than or equal to 0."
+                "Amount must be a finite number greater than 0."
             );
 
             error.statusCode = 400;
@@ -115,6 +115,31 @@ class ExpenseService {
             category: expenseData.category.trim(),
             paymentMethod: expenseData.paymentMethod.trim()
         };
+		
+		// Validate and normalise the expense payment method
+        const paymentMethodMap = {
+            "cash": "Cash",
+            "card": "Card",
+            "eft": "EFT / Bank Transfer",
+            "bank transfer": "EFT / Bank Transfer",
+            "eft / bank transfer": "EFT / Bank Transfer",
+            "mobile payment": "Mobile Payment"
+        };
+
+        const paymentMethodKey =
+            normalizedData.paymentMethod.toLowerCase();
+
+        if (!paymentMethodMap[paymentMethodKey]) {
+            const error = new Error(
+                "Invalid expense payment method. Allowed values: Cash, Card, EFT / Bank Transfer, Mobile Payment."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        normalizedData.paymentMethod =
+            paymentMethodMap[paymentMethodKey];
 
         // Verify that the associated business exists
         const businesses = businessService.getAllBusinesses();

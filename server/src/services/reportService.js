@@ -7,19 +7,61 @@ class ReportService {
     getBusinessReport(businessId, from, to) {
 
         // Validate date parameters
-        if (from && isNaN(Date.parse(from))) {
+        const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+
+        if (from && !datePattern.test(from)) {
             const error = new Error("Invalid from date.");
             error.statusCode = 400;
             throw error;
         }
 
-        if (to && isNaN(Date.parse(to))) {
+        if (to && !datePattern.test(to)) {
             const error = new Error("Invalid to date.");
             error.statusCode = 400;
             throw error;
         }
 
-        if (from && to && new Date(from) > new Date(to)) {
+        // Create UTC date boundaries
+        const fromDate = from
+            ? new Date(`${from}T00:00:00.000Z`)
+            : null;
+
+        const toDate = to
+            ? new Date(`${to}T23:59:59.999Z`)
+            : null;
+
+        // Validate actual calendar dates and date range
+        if (
+            (fromDate && isNaN(fromDate.getTime())) ||
+            (toDate && isNaN(toDate.getTime()))
+        ) {
+            const error = new Error(
+                fromDate && isNaN(fromDate.getTime())
+                    ? "Invalid from date."
+                    : "Invalid to date."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Reject impossible calendar dates
+        if (
+            (from && fromDate.toISOString().slice(0, 10) !== from) ||
+            (to && toDate.toISOString().slice(0, 10) !== to)
+        ) {
+            const error = new Error(
+                from && fromDate.toISOString().slice(0, 10) !== from
+                    ? "Invalid from date."
+                    : "Invalid to date."
+            );
+
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Validate date range
+        if (fromDate && toDate && fromDate > toDate) {
             const error = new Error(
                 "From date cannot be later than to date."
             );
@@ -52,19 +94,18 @@ class ReportService {
                 return false;
             }
 
-            const saleDate = new Date(sale.createdAt);
+        const saleDate = new Date(sale.createdAt);
+			
+			if (isNaN(saleDate.getTime())) {
+				return false;
+			}
 
-            if (from && saleDate < new Date(from)) {
+            if (fromDate && saleDate < fromDate) {
                 return false;
             }
 
-            if (to) {
-                const endDate = new Date(to);
-                endDate.setHours(23, 59, 59, 999);
-
-                if (saleDate > endDate) {
-                    return false;
-                }
+            if (toDate && saleDate > toDate) {
+                return false;
             }
 
             return true;
@@ -77,19 +118,18 @@ class ReportService {
                 return false;
             }
 
-            const expenseDate = new Date(expense.createdAt);
+        const expenseDate = new Date(expense.createdAt);
+			
+			if (isNaN(expenseDate.getTime())) {
+				return false;
+			}
 
-            if (from && expenseDate < new Date(from)) {
+            if (fromDate && expenseDate < fromDate) {
                 return false;
             }
 
-            if (to) {
-                const endDate = new Date(to);
-                endDate.setHours(23, 59, 59, 999);
-
-                if (expenseDate > endDate) {
-                    return false;
-                }
+            if (toDate && expenseDate > toDate) {
+                return false;
             }
 
             return true;

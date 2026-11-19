@@ -17,7 +17,8 @@ const fixtureFiles = [
     "suppliers.json",
     "employees.json",
     "tasks.json",
-    "sales.json"
+    "sales.json",
+    "expenses.json"
 ];
 
 for (const fileName of fixtureFiles) {
@@ -154,6 +155,84 @@ test("Unknown API routes return HTTP 404", async () => {
     );
 
     assert.equal(response.status, 404);
+});
+
+// Report integration tests
+
+test("GET /api/reports/:businessId returns the business report", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/reports/BUS001`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.businessId, "BUS001");
+    assert.equal(body.totalSales, 240);
+    assert.equal(body.totalExpenses, 850);
+    assert.equal(body.netPosition, -610);
+    assert.equal(body.salesCount, 2);
+    assert.equal(body.expenseCount, 1);
+});
+
+test("GET /api/reports/:businessId returns 404 for an unknown business", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/reports/BUS999`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(body.error, "Business not found.");
+});
+
+test("GET /api/reports/:businessId rejects an invalid from date", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/reports/BUS001?from=invalid`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error, "Invalid from date.");
+});
+
+test("GET /api/reports/:businessId rejects an invalid to date", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/reports/BUS001?to=invalid`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error, "Invalid to date.");
+});
+
+test("GET /api/reports/:businessId applies date filters", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/reports/BUS001?from=2026-11-09&to=2026-11-09`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.businessId, "BUS001");
+    assert.equal(body.totalSales, 240);
+    assert.equal(body.totalExpenses, 0);
+    assert.equal(body.netPosition, 240);
+    assert.equal(body.salesCount, 2);
+    assert.equal(body.expenseCount, 0);
+});
+
+test("GET /api/reports/:businessId rejects a reversed date range", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/reports/BUS001?from=2026-11-10&to=2026-11-09`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error, "From date cannot be later than to date.");
 });
 
 // Product integration tests
@@ -1839,4 +1918,417 @@ test("POST /api/sales creates a sale using the catalogue price and updates stock
     assert.equal(saleResponse.status, 200);
     assert.equal(savedSale.id, "SALE_TEST_001");
     assert.equal(savedSale.totalAmount, 240);
+});
+
+test("GET /api/expenses/:businessId returns expenses for that business", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/expenses/BUS001`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.length, 1);
+    assert.equal(body[0].id, "EXP001");
+    assert.equal(body[0].businessId, "BUS001");
+    assert.equal(body[0].description, "Electricity bill");
+    assert.equal(body[0].amount, 850);
+    assert.equal(body[0].category, "Utilities");
+    assert.equal(body[0].paymentMethod, "Bank Transfer");
+    assert.equal(body[0].currency, "ZAR");
+});
+
+test("GET /api/expenses/:businessId returns an empty array when no expenses exist", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/expenses/BUS002`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(body, []);
+});
+
+test("GET /api/expenses/:businessId/:expenseId returns the requested expense", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/expenses/BUS001/EXP001`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.id, "EXP001");
+    assert.equal(body.businessId, "BUS001");
+    assert.equal(body.description, "Electricity bill");
+    assert.equal(body.amount, 850);
+    assert.equal(body.category, "Utilities");
+    assert.equal(body.paymentMethod, "Bank Transfer");
+    assert.equal(body.currency, "ZAR");
+});
+
+test("GET /api/expenses/:businessId/:expenseId returns 404 for a missing expense", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/expenses/BUS001/EXP999`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(
+        body.error,
+        "Expense not found."
+    );
+});
+
+test("POST /api/expenses accepts all four supported payment methods", async () => {
+    const paymentMethods = [
+        "Cash",
+        "Card",
+        "EFT / Bank Transfer",
+        "Mobile Payment"
+    ];
+
+    for (let i = 0; i < paymentMethods.length; i++) {
+        const newExpense = {
+            id: `EXP_TEST_${i + 1}`,
+            businessId: "BUS001",
+            description: `Test expense ${i + 1}`,
+            amount: 100,
+            category: "General",
+            paymentMethod: paymentMethods[i]
+        };
+
+        const response = await fetch(
+            `${baseUrl}/api/expenses`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(newExpense)
+            }
+        );
+
+        const body = await response.json();
+
+        assert.equal(response.status, 201);
+        assert.equal(body.id, newExpense.id);
+        assert.equal(body.paymentMethod, paymentMethods[i]);
+        assert.equal(body.currency, "ZAR");
+        assert.ok(body.createdAt);
+        assert.ok(body.updatedAt);
+    }
+});
+
+test("POST /api/expenses normalises payment methods and accepted aliases", async () => {
+    const paymentMethodCases = [
+        { input: "cash", expected: "Cash" },
+        { input: "CARD", expected: "Card" },
+        { input: "Bank Transfer", expected: "EFT / Bank Transfer" },
+        { input: "mobile payment", expected: "Mobile Payment" }
+    ];
+
+    for (let i = 0; i < paymentMethodCases.length; i++) {
+        const newExpense = {
+            id: `EXP_NORMALISE_${i + 1}`,
+            businessId: "BUS001",
+            description: `Normalisation test ${i + 1}`,
+            amount: 150,
+            category: "General",
+            paymentMethod: paymentMethodCases[i].input
+        };
+
+        const response = await fetch(
+            `${baseUrl}/api/expenses`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(newExpense)
+            }
+        );
+
+        const body = await response.json();
+
+        assert.equal(response.status, 201);
+        assert.equal(
+            body.paymentMethod,
+            paymentMethodCases[i].expected
+        );
+    }
+});
+
+test("GET /api/expenses/:businessId/:expenseId does not return another business's expense", async () => {
+    const response = await fetch(
+        `${baseUrl}/api/expenses/BUS002/EXP001`
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(
+        body.error,
+        "Expense not found."
+    );
+});
+
+test("POST /api/expenses rejects unsupported payment methods", async () => {
+    const invalidExpense = {
+        id: "EXP_INVALID_PAYMENT",
+        businessId: "BUS001",
+        description: "Invalid payment test",
+        amount: 200,
+        category: "General",
+        paymentMethod: "Cheque"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidExpense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "Invalid expense payment method. Allowed values: Cash, Card, EFT / Bank Transfer, Mobile Payment."
+    );
+});
+
+test("POST /api/expenses rejects zero-value expenses", async () => {
+    const invalidExpense = {
+        id: "EXP_ZERO_AMOUNT",
+        businessId: "BUS001",
+        description: "Zero amount test",
+        amount: 0,
+        category: "General",
+        paymentMethod: "Cash"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidExpense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "Amount must be a finite number greater than 0."
+    );
+});
+
+test("POST /api/expenses rejects negative amounts", async () => {
+    const invalidExpense = {
+        id: "EXP_NEGATIVE_AMOUNT",
+        businessId: "BUS001",
+        description: "Negative amount test",
+        amount: -100,
+        category: "General",
+        paymentMethod: "Cash"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidExpense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "Amount must be a finite number greater than 0."
+    );
+});
+
+test("POST /api/expenses accepts decimal amounts", async () => {
+    const expense = {
+        id: "EXP_DECIMAL_AMOUNT",
+        businessId: "BUS001",
+        description: "Decimal amount test",
+        amount: 125.50,
+        category: "General",
+        paymentMethod: "Cash"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(expense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 201);
+    assert.equal(body.amount, 125.50);
+});
+
+test("POST /api/expenses rejects missing required fields", async () => {
+    const invalidExpense = {
+        id: "EXP_MISSING_FIELD",
+        businessId: "BUS001",
+        description: "Missing field test",
+        amount: 100,
+        category: "General"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidExpense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(body.error, "paymentMethod is required.");
+});
+
+test("POST /api/expenses rejects expenses linked to nonexistent businesses", async () => {
+    const invalidExpense = {
+        id: "EXP_INVALID_BUSINESS",
+        businessId: "BUS999",
+        description: "Invalid business test",
+        amount: 100,
+        category: "General",
+        paymentMethod: "Cash"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidExpense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 404);
+    assert.equal(
+        body.error,
+        "Business associated with this expense does not exist."
+    );
+});
+
+test("POST /api/expenses rejects duplicate expense IDs", async () => {
+    const expense = {
+        id: "EXP001",
+        businessId: "BUS001",
+        description: "Duplicate expense test",
+        amount: 100,
+        category: "General",
+        paymentMethod: "Cash"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(expense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 409);
+    assert.equal(body.error, "Expense ID already exists.");
+});
+
+test("POST /api/expenses rejects empty descriptions", async () => {
+    const invalidExpense = {
+        id: "EXP_EMPTY_DESCRIPTION",
+        businessId: "BUS001",
+        description: "   ",
+        amount: 100,
+        category: "General",
+        paymentMethod: "Cash"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidExpense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "description must be a non-empty string."
+    );
+});
+
+test("POST /api/expenses rejects empty categories", async () => {
+    const invalidExpense = {
+        id: "EXP_EMPTY_CATEGORY",
+        businessId: "BUS001",
+        description: "Empty category test",
+        amount: 100,
+        category: "   ",
+        paymentMethod: "Cash"
+    };
+
+    const response = await fetch(
+        `${baseUrl}/api/expenses`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(invalidExpense)
+        }
+    );
+
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.equal(
+        body.error,
+        "category must be a non-empty string."
+    );
 });
