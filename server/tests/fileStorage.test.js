@@ -351,3 +351,29 @@ test("writeMultiple restores original files when a replacement fails", () => {
         false
     );
 });
+
+test("read throws a descriptive error when JSON is not an array", () => {
+    fs.writeFileSync(
+        path.join(testDataDirectory, "object.json"),
+        JSON.stringify({ id: "BUS001", name: "Test Business" }),
+        "utf8"
+    );
+
+    assert.throws(
+        () => FileStorage.read("object.json"),
+        /Invalid data structure in JSON file "object.json": expected an array/
+    );
+});
+
+test("read throws a descriptive error when JSON contains null", () => {
+    fs.writeFileSync(
+        path.join(testDataDirectory, "null.json"),
+        "null",
+        "utf8"
+    );
+
+    assert.throws(
+        () => FileStorage.read("null.json"),
+        /Invalid data structure in JSON file "null.json": expected an array/
+    );
+});

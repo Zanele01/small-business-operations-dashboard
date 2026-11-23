@@ -20,7 +20,8 @@ class FileStorage {
         return path.join(this.dataDirectory, fileName);
     }
 
-    read(fileName) {
+
+	    read(fileName) {
         const filePath = this.getFilePath(fileName);
 
         if (!fs.existsSync(filePath)) {
@@ -33,14 +34,25 @@ class FileStorage {
             return [];
         }
 
+        let parsedData;
+
         try {
-            return JSON.parse(data);
+            parsedData = JSON.parse(data);
         } catch (error) {
             throw new Error(
                 `Failed to parse JSON file "${fileName}": ${error.message}`
             );
         }
+
+        if (!Array.isArray(parsedData)) {
+            throw new Error(
+                `Invalid data structure in JSON file "${fileName}": expected an array.`
+            );
+        }
+
+        return parsedData;
     }
+
 
     write(fileName, data) {
         const filePath = this.getFilePath(fileName);
