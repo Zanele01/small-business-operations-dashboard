@@ -5,6 +5,7 @@ const os = require("os");
 const path = require("path");
 
 const FileStorage = require("../src/utils/fileStorage");
+const FileStorageClass = FileStorage.FileStorage;
 
 let testDataDirectory;
 let originalDataDirectory;
@@ -26,6 +27,88 @@ test.after(() => {
         recursive: true,
         force: true
     });
+});
+
+test("constructor creates a missing custom data directory", () => {
+    const parentDirectory = fs.mkdtempSync(
+        path.join(os.tmpdir(), "file-storage-constructor-")
+    );
+
+    const customDirectory = path.join(parentDirectory, "data");
+
+    try {
+        assert.equal(fs.existsSync(customDirectory), false);
+
+        const storage = new FileStorageClass(customDirectory);
+
+        assert.equal(storage.dataDirectory, customDirectory);
+        assert.equal(fs.existsSync(customDirectory), true);
+        assert.equal(fs.statSync(customDirectory).isDirectory(), true);
+    } finally {
+        fs.rmSync(parentDirectory, {
+            recursive: true,
+            force: true
+        });
+    }
+});
+
+test("constructor creates nested custom data directories", () => {
+    const parentDirectory = fs.mkdtempSync(
+        path.join(os.tmpdir(), "file-storage-nested-")
+    );
+
+    const customDirectory = path.join(
+        parentDirectory,
+        "storage",
+        "data"
+    );
+
+    try {
+        const storage = new FileStorageClass(customDirectory);
+
+        assert.equal(storage.dataDirectory, customDirectory);
+        assert.equal(fs.existsSync(customDirectory), true);
+        assert.equal(fs.statSync(customDirectory).isDirectory(), true);
+    } finally {
+        fs.rmSync(parentDirectory, {
+            recursive: true,
+            force: true
+        });
+    }
+});
+
+test("constructor preserves an existing data directory and its contents", () => {
+    const parentDirectory = fs.mkdtempSync(
+        path.join(os.tmpdir(), "file-storage-existing-")
+    );
+
+    const customDirectory = path.join(parentDirectory, "data");
+    const existingFile = path.join(customDirectory, "existing.json");
+
+    try {
+        fs.mkdirSync(customDirectory);
+
+        fs.writeFileSync(
+            existingFile,
+            JSON.stringify([{ id: "BUS001" }]),
+            "utf8"
+        );
+
+        const storage = new FileStorageClass(customDirectory);
+
+        assert.equal(storage.dataDirectory, customDirectory);
+        assert.equal(fs.existsSync(existingFile), true);
+
+        assert.deepEqual(
+            JSON.parse(fs.readFileSync(existingFile, "utf8")),
+            [{ id: "BUS001" }]
+        );
+    } finally {
+        fs.rmSync(parentDirectory, {
+            recursive: true,
+            force: true
+        });
+    }
 });
 
 test("getFilePath returns the correct path for a valid JSON filename", () => {

@@ -2,10 +2,14 @@ const fs = require("fs");
 const path = require("path");
 
 class FileStorage {
-    constructor() {
-        this.dataDirectory = process.env.DATA_DIRECTORY
-            ? path.resolve(process.env.DATA_DIRECTORY)
-            : path.join(__dirname, "..", "data");
+    constructor(dataDirectory) {
+        this.dataDirectory = dataDirectory
+            ? path.resolve(dataDirectory)
+            : process.env.DATA_DIRECTORY
+                ? path.resolve(process.env.DATA_DIRECTORY)
+                : path.join(__dirname, "..", "data");
+
+        fs.mkdirSync(this.dataDirectory, { recursive: true });
     }
 
     getFilePath(fileName) {
@@ -216,4 +220,7 @@ class FileStorage {
     }
 }
 
-module.exports = new FileStorage();
+const fileStorage = new FileStorage();
+
+module.exports = fileStorage;
+module.exports.FileStorage = FileStorage;
