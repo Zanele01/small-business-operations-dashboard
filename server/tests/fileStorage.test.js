@@ -237,6 +237,563 @@ test("write rejects data that cannot be converted to JSON", () => {
     );
 });
 
+test("writeTransactionJournal saves a formatted journal file", () => {
+    const journal = {
+        status: "pending",
+        files: [
+            {
+                fileName: "sales.json",
+                existed: true
+            },
+            {
+                fileName: "products.json",
+                existed: true
+            }
+        ]
+    };
+
+    FileStorage.writeTransactionJournal(journal);
+
+    const journalPath = FileStorage.getTransactionFilePath();
+    const savedJournal = JSON.parse(
+        fs.readFileSync(journalPath, "utf8")
+    );
+
+    assert.deepEqual(savedJournal, journal);
+    assert.equal(fs.existsSync(`${journalPath}.tmp`), false);
+
+    fs.unlinkSync(journalPath);
+});
+
+test("readTransactionJournal returns null when no journal exists", () => {
+    assert.equal(FileStorage.readTransactionJournal(), null);
+});
+
+test("constructor recovers an unfinished transaction during initialisation", () => {
+    const customDirectory = fs.mkdtempSync(
+        path.join(os.tmpdir(), "file-storage-startup-recovery-")
+    );
+
+    try {
+        const filePath = path.join(customDirectory, "sales.json");
+        const backupPath = `${filePath}.bak`;
+        const journalPath = path.join(
+            customDirectory,
+            ".file-storage-transaction.json"
+        );
+
+        fs.writeFileSync(
+            backupPath,
+            JSON.stringify([{ id: "original" }]),
+            "utf8"
+        );
+
+        fs.writeFileSync(
+            filePath,
+            JSON.stringify([{ id: "updated" }]),
+            "utf8"
+        );
+
+        fs.writeFileSync(
+            journalPath,
+            JSON.stringify({
+                status: "pending",
+                files: [
+                    {
+                        fileName: "sales.json",
+                        existed: true
+                    }
+                ]
+            }),
+            "utf8"
+        );
+
+        new FileStorageClass(customDirectory);
+
+        const recoveredData = JSON.parse(
+            fs.readFileSync(filePath, "utf8")
+        );
+
+        assert.deepEqual(recoveredData, [{ id: "original" }]);
+        assert.equal(fs.existsSync(backupPath), false);
+        assert.equal(fs.existsSync(journalPath), false);
+    } finally {
+        fs.rmSync(customDirectory, {
+            recursive: true,
+            force: true
+        });
+    }
+});
+
+test("recoverTransaction does nothing when no journal exists", () => {
+    assert.doesNotThrow(
+        () => FileStorage.recoverTransaction()
+    );
+});
+
+test("recoverTransaction restores an existing file from its backup", () => {
+    const fileName = "sales.json";
+    const filePath = FileStorage.getFilePath(fileName);
+    const backupPath = `${filePath}.bak`;
+
+    const originalData = [{ id: "SALE001", total: 100 }];
+    const updatedData = [{ id: "SALE001", total: 200 }];
+
+    fs.writeFileSync(
+        backupPath,
+        JSON.stringify(originalData),
+        "utf8"
+    );
+
+    fs.writeFileSync(
+        filePath,
+        JSON.stringify(updatedData),
+        "utf8"
+    );
+
+    FileStorage.writeTransactionJournal({
+        status: "pending",
+        files: [
+            {
+                fileName,
+                existed: true
+            }
+        ]
+    });
+
+    FileStorage.recoverTransaction();
+
+    assert.deepEqual(FileStorage.read(fileName), originalData);
+    assert.equal(fs.existsSync(backupPath), false);
+    assert.equal(
+        fs.existsSync(FileStorage.getTransactionFilePath()),
+        false
+    );
+});
+
+test("recoverTransaction removes a newly created file", () => {
+    const fileName = "sales.json";
+    const filePath = FileStorage.getFilePath(fileName);
+
+    fs.writeFileSync(
+        filePath,
+        JSON.stringify([{ id: "SALE001", total: 200 }]),
+        "utf8"
+    );
+
+    FileStorage.writeTransactionJournal({
+        status: "pending",
+        files: [
+            {
+                fileName,
+                existed: false
+            }
+        ]
+    });
+
+    FileStorage.recoverTransaction();
+
+    assert.equal(fs.existsSync(filePath), false);
+    assert.equal(
+        fs.existsSync(FileStorage.getTransactionFilePath()),
+        false
+    );
+});
+
+test("recoverTransaction removes temporary files", () => {
+    const fileName = "sales.json";
+    const filePath = FileStorage.getFilePath(fileName);
+    const temporaryPath = `${filePath}.tmp`;
+
+    fs.writeFileSync(
+        filePath,
+        JSON.stringify([{ id: "SALE001", total: 100 }]),
+        "utf8"
+    );
+
+    fs.writeFileSync(
+        temporaryPath,
+        JSON.stringify([{ id: "SALE001", total: 200 }]),
+        "utf8"
+    );
+
+    FileStorage.writeTransactionJournal({
+        status: "pending",
+        files: [
+            {
+                fileName,
+                existed: true
+            }
+        ]
+    });
+
+    FileStorage.recoverTransaction();
+
+    assert.equal(fs.existsSync(temporaryPath), false);
+    assert.deepEqual(FileStorage.read(fileName), [
+        { id: "SALE001", total: 100 }
+    ]);
+});
+
+test("recoverTransaction preserves the journal when recovery fails", () => {
+    const fileName = "sales.json";
+    const filePath = FileStorage.getFilePath(fileName);
+    const backupPath = `${filePath}.bak`;
+
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+
+    if (fs.existsSync(backupPath)) {
+        fs.unlinkSync(backupPath);
+    }
+
+    FileStorage.writeTransactionJournal({
+        status: "pending",
+        files: [
+            {
+                fileName,
+                existed: true
+            }
+        ]
+    });
+
+    assert.throws(
+        () => FileStorage.recoverTransaction(),
+        /original file and backup are both missing/
+    );
+
+    assert.equal(
+        fs.existsSync(FileStorage.getTransactionFilePath()),
+        true
+    );
+});
+
+test("recoverTransaction keeps committed files and removes backups", () => {
+    const fileName = "sales.json";
+    const filePath = FileStorage.getFilePath(fileName);
+    const backupPath = `${filePath}.bak`;
+    const temporaryPath = `${filePath}.tmp`;
+
+    const updatedData = [
+        { id: "SALE001", total: 200 }
+    ];
+
+    fs.writeFileSync(
+        filePath,
+        JSON.stringify(updatedData),
+        "utf8"
+    );
+
+    fs.writeFileSync(
+        backupPath,
+        JSON.stringify([{ id: "SALE001", total: 100 }]),
+        "utf8"
+    );
+
+    fs.writeFileSync(
+        temporaryPath,
+        JSON.stringify([{ id: "SALE001", total: 300 }]),
+        "utf8"
+    );
+
+    FileStorage.writeTransactionJournal({
+        status: "committed",
+        files: [
+            {
+                fileName,
+                existed: true
+            }
+        ]
+    });
+
+    FileStorage.recoverTransaction();
+
+    assert.deepEqual(FileStorage.read(fileName), updatedData);
+    assert.equal(fs.existsSync(backupPath), false);
+    assert.equal(fs.existsSync(temporaryPath), false);
+    assert.equal(
+        fs.existsSync(FileStorage.getTransactionFilePath()),
+        false
+    );
+});
+
+test("recoverTransaction preserves recovery files when a committed file is missing", () => {
+    const fileName = "sales.json";
+    const filePath = FileStorage.getFilePath(fileName);
+    const backupPath = `${filePath}.bak`;
+
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+
+    if (fs.existsSync(backupPath)) {
+        fs.unlinkSync(backupPath);
+    }
+
+    fs.writeFileSync(
+        backupPath,
+        JSON.stringify([{ id: "SALE001", total: 100 }]),
+        "utf8"
+    );
+
+    FileStorage.writeTransactionJournal({
+        status: "committed",
+        files: [
+            {
+                fileName,
+                existed: true
+            }
+        ]
+    });
+
+    assert.throws(
+        () => FileStorage.recoverTransaction(),
+        /"sales.json" is missing/
+    );
+
+    assert.equal(fs.existsSync(backupPath), true);
+    assert.equal(
+        fs.existsSync(FileStorage.getTransactionFilePath()),
+        true
+    );
+});
+
+test("readTransactionJournal returns a valid journal", () => {
+    const journal = {
+        status: "pending",
+        files: [
+            {
+                fileName: "sales.json",
+                existed: true
+            },
+            {
+                fileName: "products.json",
+                existed: false
+            }
+        ]
+    };
+
+    FileStorage.writeTransactionJournal(journal);
+
+    try {
+        assert.deepEqual(
+            FileStorage.readTransactionJournal(),
+            journal
+        );
+    } finally {
+        FileStorage.removeTransactionJournal();
+    }
+});
+
+test("readTransactionJournal throws a descriptive error when JSON is malformed", () => {
+    const journalPath = FileStorage.getTransactionFilePath();
+
+    fs.writeFileSync(journalPath, '{"status": "pending"', "utf8");
+
+    try {
+        assert.throws(
+            () => FileStorage.readTransactionJournal(),
+            /Failed to read transaction journal:/
+        );
+    } finally {
+        FileStorage.removeTransactionJournal();
+    }
+});
+
+test("readTransactionJournal rejects an unsupported journal status", () => {
+    const journalPath = FileStorage.getTransactionFilePath();
+
+    fs.writeFileSync(
+        journalPath,
+        JSON.stringify({
+            status: "unknown",
+            files: [
+                {
+                    fileName: "sales.json",
+                    existed: true
+                }
+            ]
+        }),
+        "utf8"
+    );
+
+    try {
+        assert.throws(
+            () => FileStorage.readTransactionJournal(),
+            /Invalid transaction journal structure/
+        );
+    } finally {
+        FileStorage.removeTransactionJournal();
+    }
+});
+
+test("readTransactionJournal rejects an empty files array", () => {
+    const journalPath = FileStorage.getTransactionFilePath();
+
+    fs.writeFileSync(
+        journalPath,
+        JSON.stringify({
+            status: "pending",
+            files: []
+        }),
+        "utf8"
+    );
+
+    try {
+        assert.throws(
+            () => FileStorage.readTransactionJournal(),
+            /Invalid transaction journal structure/
+        );
+    } finally {
+        FileStorage.removeTransactionJournal();
+    }
+});
+
+test("readTransactionJournal rejects file entries without an existed property", () => {
+    const journalPath = FileStorage.getTransactionFilePath();
+
+    fs.writeFileSync(
+        journalPath,
+        JSON.stringify({
+            status: "pending",
+            files: [
+                {
+                    fileName: "sales.json"
+                }
+            ]
+        }),
+        "utf8"
+    );
+
+    try {
+        assert.throws(
+            () => FileStorage.readTransactionJournal(),
+            /Invalid transaction journal file entry/
+        );
+    } finally {
+        FileStorage.removeTransactionJournal();
+    }
+});
+
+test("readTransactionJournal rejects duplicate filenames", () => {
+    const journalPath = FileStorage.getTransactionFilePath();
+
+    fs.writeFileSync(
+        journalPath,
+        JSON.stringify({
+            status: "pending",
+            files: [
+                {
+                    fileName: "sales.json",
+                    existed: true
+                },
+                {
+                    fileName: "sales.json",
+                    existed: true
+                }
+            ]
+        }),
+        "utf8"
+    );
+
+    try {
+        assert.throws(
+            () => FileStorage.readTransactionJournal(),
+            /Duplicate file name in transaction journal/
+        );
+    } finally {
+        FileStorage.removeTransactionJournal();
+    }
+});
+
+test("readTransactionJournal rejects unsafe filenames", () => {
+    const journalPath = FileStorage.getTransactionFilePath();
+
+    fs.writeFileSync(
+        journalPath,
+        JSON.stringify({
+            status: "pending",
+            files: [
+                {
+                    fileName: "../sales.json",
+                    existed: true
+                }
+            ]
+        }),
+        "utf8"
+    );
+
+    try {
+        assert.throws(
+            () => FileStorage.readTransactionJournal(),
+            /Invalid JSON file name/
+        );
+    } finally {
+        FileStorage.removeTransactionJournal();
+    }
+});
+
+test("writeTransactionJournal cleans up the temporary file when renaming fails", () => {
+    const journalPath = FileStorage.getTransactionFilePath();
+    const temporaryPath = `${journalPath}.tmp`;
+
+    const originalRenameSync = fs.renameSync;
+
+    try {
+        fs.renameSync = (source, destination) => {
+            if (
+                source === temporaryPath &&
+                destination === journalPath
+            ) {
+                throw new Error("Simulated journal rename failure.");
+            }
+
+            return originalRenameSync(source, destination);
+        };
+
+        assert.throws(
+            () => FileStorage.writeTransactionJournal({
+                status: "pending",
+                files: []
+            }),
+            /Simulated journal rename failure/
+        );
+
+        assert.equal(fs.existsSync(temporaryPath), false);
+        assert.equal(fs.existsSync(journalPath), false);
+    } finally {
+        fs.renameSync = originalRenameSync;
+    }
+});
+
+test("removeTransactionJournal removes the journal and temporary files", () => {
+    const journalPath = FileStorage.getTransactionFilePath();
+    const temporaryPath = `${journalPath}.tmp`;
+
+    fs.writeFileSync(journalPath, '{"status":"pending"}', "utf8");
+    fs.writeFileSync(temporaryPath, '{"status":"pending"}', "utf8");
+
+    FileStorage.removeTransactionJournal();
+
+    assert.equal(fs.existsSync(journalPath), false);
+    assert.equal(fs.existsSync(temporaryPath), false);
+});
+
+test("removeTransactionJournal does not fail when journal files do not exist", () => {
+    FileStorage.removeTransactionJournal();
+
+    assert.equal(
+        fs.existsSync(FileStorage.getTransactionFilePath()),
+        false
+    );
+
+    assert.equal(
+        fs.existsSync(`${FileStorage.getTransactionFilePath()}.tmp`),
+        false
+    );
+});
+
 test("write does not leave a temporary file after a successful write", () => {
     FileStorage.write("temporary-test.json", [
         { id: "TEST001" }
@@ -306,6 +863,27 @@ test("writeMultiple successfully updates multiple JSON files", () => {
         FileStorage.read("multiple-products.json"),
         products
     );
+
+    assert.equal(
+        fs.existsSync(
+            path.join(testDataDirectory, ".file-storage-transaction.json")
+        ),
+        false
+    );
+
+    assert.equal(
+        fs.existsSync(
+            path.join(testDataDirectory, "multiple-businesses.json.bak")
+        ),
+        false
+    );
+
+    assert.equal(
+        fs.existsSync(
+            path.join(testDataDirectory, "multiple-products.json.bak")
+        ),
+        false
+    );
 });
 
 test("writeMultiple rejects an empty files array", () => {
@@ -355,6 +933,53 @@ test("writeMultiple rejects data that cannot be converted to JSON", () => {
         ]),
         /could not be converted to JSON/
     );
+});
+
+test("writeMultiple rejects an existing backup file without overwriting it", () => {
+    const fileName = "existing-backup.json";
+    const backupPath = path.join(
+        testDataDirectory,
+        `${fileName}.bak`
+    );
+
+    const originalBackupContent = "Preserve this backup file.";
+
+    fs.writeFileSync(
+        backupPath,
+        originalBackupContent,
+        "utf8"
+    );
+
+    try {
+        assert.throws(
+            () => FileStorage.writeMultiple([
+                {
+                    fileName,
+                    data: [{ id: "TEST001" }]
+                }
+            ]),
+            /backup file already exists/
+        );
+
+        assert.equal(
+            fs.readFileSync(backupPath, "utf8"),
+            originalBackupContent
+        );
+
+        assert.equal(
+            fs.existsSync(
+                path.join(
+                    testDataDirectory,
+                    ".file-storage-transaction.json"
+                )
+            ),
+            false
+        );
+    } finally {
+        if (fs.existsSync(backupPath)) {
+            fs.unlinkSync(backupPath);
+        }
+    }
 });
 
 test("writeMultiple restores original files when a replacement fails", () => {
